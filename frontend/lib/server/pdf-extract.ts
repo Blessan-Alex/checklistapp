@@ -1,3 +1,4 @@
+import pdfParse from "pdf-parse";
 import type { Case } from "@/lib/types";
 import type { ParsedChecklist } from "@/lib/mock-parse";
 import { caseIdFromUan } from "@/lib/case-from-parsed-checklist";
@@ -15,14 +16,8 @@ function normalizeChecklistText(raw: string): string {
 }
 
 async function extractTextFromPdfBuffer(buffer: Buffer): Promise<string> {
-  const { PDFParse } = await import("pdf-parse");
-  const parser = new PDFParse({ data: new Uint8Array(buffer) });
-  try {
-    const result = await parser.getText();
-    return result.text ?? "";
-  } finally {
-    await parser.destroy();
-  }
+  const parsed = await pdfParse(buffer);
+  return parsed.text ?? "";
 }
 
 function inferTitle(fullName: string): Case["title"] {
@@ -90,10 +85,13 @@ export async function parseChecklistPdf(
   let text = "";
   try {
     text = normalizeChecklistText(await extractTextFromPdfBuffer(buffer));
-  } catch {
-    throw new ChecklistParseError(
-      "Could not read this PDF. Try a different export or re-download the checklist from UKVI.",
-    );
+  } catch (error) {
+    console.error("[parseChecklistPdf] extract failed:", error);
+    const message =
+      error instanceof Error && /password/i.test(error.message)
+        ? "This PDF appears to be password-protected. Download an unlocked checklist from UKVI."
+        : "Could not read this PDF. Try a different export or re-download the checklist from UKVI.";
+    throw new ChecklistParseError(message);
   }
 
   const uanMatch = text.match(UAN_RE);
