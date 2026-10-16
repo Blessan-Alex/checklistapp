@@ -1,0 +1,112 @@
+"use client";
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ApiError, api, queryKeys } from "@/lib/api-client";
+import { useMockDataSource } from "@/lib/data-source";
+import type { Case } from "@/lib/types";
+
+export function useCasesQuery() {
+  const mock = useMockDataSource();
+  return useQuery({
+    queryKey: queryKeys.cases,
+    queryFn: async () => (await api.listCases()).cases,
+    enabled: !mock,
+    retry: (failureCount, error) => {
+      if (error instanceof ApiError && error.status === 401) {
+        return false;
+      }
+      return failureCount < 1;
+    },
+  });
+}
+
+export function useCaseQuery(caseId: string | null) {
+  const mock = useMockDataSource();
+  return useQuery({
+    queryKey: queryKeys.case(caseId ?? ""),
+    queryFn: async () => (await api.getCase(caseId!)).case,
+    enabled: !mock && Boolean(caseId),
+  });
+}
+
+export function useClientCaseQuery(token: string) {
+  const mock = useMockDataSource();
+  return useQuery({
+    queryKey: queryKeys.clientCase(token),
+    queryFn: async () => (await api.getClientCase(token)).case,
+    enabled: !mock && Boolean(token),
+    refetchOnWindowFocus: true,
+    retry: (failureCount, error) => {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 401)) {
+        return false;
+      }
+      return failureCount < 1;
+    },
+  });
+}
+
+export function useSaveCaseMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      patch,
+    }: {
+      id: string;
+      patch: Partial<Case>;
+    }) => (await api.patchCase(id, patch)).case,
+    onSuccess: (saved) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.cases });
+      queryClient.invalidateQueries({ queryKey: queryKeys.case(saved.id) });
+    },
+  });
+}
+
+export function usePublishCaseMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => api.publishCase(id),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.cases });
+      queryClient.invalidateQueries({ queryKey: queryKeys.case(result.case.id) });
+    },
+  });
+}
+
+export function useCreateCaseMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => api.createCase(file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.cases });
+    },
+  });
+}
+
+export function useClientSlotUploadMutation(token: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      slotId,
+      file,
+    }: {
+      slotId: string;
+      file: File;
+    }) => api.uploadClientSlot(token, slotId, file),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKeys.clientCase(token), data.case);
+      queryClient.invalidateQueries({ queryKey: queryKeys.cases });
+    },
+  });
+}
+
+export function useClientSubmitMutation(token: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => api.submitClientCase(token),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKeys.clientCase(token), data.case);
+      queryClient.invalidateQueries({ queryKey: queryKeys.cases });
+    },
+  });
+}

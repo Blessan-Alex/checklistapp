@@ -1,0 +1,11 @@
+/**
+ * Canonical palette — values from mvp-frontend-plan/assets/KHB_ColorPalette.jpg
+ */
+:root {
+  --brand-deep-purple: #4d1b7a;
+  --brand-warm-ivory: #fbf9e5;
+  --brand-dark-indigo: #21173f;
+  --brand-rich-violet: #621d92;
+  --brand-soft-lavender: #9860c6;
+  --brand-golden-ochre: #e3a72e;
+}

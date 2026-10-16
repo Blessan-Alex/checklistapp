@@ -1,0 +1,115 @@
+{
+  "route": "skilled_worker",
+  "displayName": "Skilled Worker",
+  "slots": [
+    {
+      "id": "sw-01-passport-applicant",
+      "sortNumber": 1,
+      "documentName": "Passport",
+      "personRole": "applicant",
+      "source": "home_office",
+      "clientUpload": true,
+      "instructionType": "passport"
+    },
+    {
+      "id": "sw-02-ho-consent",
+      "sortNumber": 2,
+      "documentName": "Home Office Consent",
+      "personRole": null,
+      "source": "firm",
+      "clientUpload": true,
+      "instructionType": "ho-consent"
+    },
+    {
+      "id": "sw-03-cover-letter",
+      "sortNumber": 3,
+      "documentName": "Cover Letter",
+      "personRole": null,
+      "source": "firm",
+      "clientUpload": false,
+      "instructionType": "cover-letter"
+    },
+    {
+      "id": "sw-04-passport-partner",
+      "sortNumber": 4,
+      "documentName": "Passport",
+      "personRole": "partner",
+      "source": "firm",
+      "clientUpload": true,
+      "instructionType": "passport"
+    },
+    {
+      "id": "sw-05-cos-applicant",
+      "sortNumber": 5,
+      "documentName": "CoS",
+      "personRole": "applicant",
+      "source": "firm",
+      "clientUpload": true,
+      "instructionType": "cos",
+      "filenameSuffix": "pending"
+    },
+    {
+      "id": "sw-06-marriage-certificate",
+      "sortNumber": 6,
+      "documentName": "Marriage Certificate",
+      "personRole": null,
+      "source": "firm",
+      "clientUpload": true,
+      "instructionType": "marriage"
+    },
+    {
+      "id": "sw-07-evisa-applicant",
+      "sortNumber": 7,
+      "documentName": "E Visa",
+      "personRole": "applicant",
+      "source": "firm",
+      "clientUpload": true,
+      "instructionType": "evisa"
+    },
+    {
+      "id": "sw-07-sharecode-applicant",
+      "sortNumber": 7,
+      "documentName": "Sharecode",
+      "personRole": "applicant",
+      "source": "firm",
+      "clientUpload": true,
+      "instructionType": "sharecode"
+    },
+    {
+      "id": "sw-08-evisa-partner",
+      "sortNumber": 8,
+      "documentName": "E Visa",
+      "personRole": "partner",
+      "source": "firm",
+      "clientUpload": true,
+      "instructionType": "evisa"
+    },
+    {
+      "id": "sw-08-sharecode-partner",
+      "sortNumber": 8,
+      "documentName": "Sharecode",
+      "personRole": "partner",
+      "source": "firm",
+      "clientUpload": true,
+      "instructionType": "sharecode"
+    },
+    {
+      "id": "sw-09-brp-partner",
+      "sortNumber": 9,
+      "documentName": "BRP",
+      "personRole": "partner",
+      "source": "firm",
+      "clientUpload": true,
+      "instructionType": "brp"
+    },
+    {
+      "id": "sw-10-brp-applicant",
+      "sortNumber": 10,
+      "documentName": "BRP",
+      "personRole": "applicant",
+      "source": "firm",
+      "clientUpload": true,
+      "instructionType": "brp"
+    }
+  ]
+}

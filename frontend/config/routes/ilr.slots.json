@@ -1,0 +1,114 @@
+{
+  "route": "ilr",
+  "displayName": "ILR (SET O)",
+  "slots": [
+    {
+      "id": "ilr-01-passport",
+      "sortNumber": 1,
+      "documentName": "Passport",
+      "personRole": "applicant",
+      "source": "home_office",
+      "clientUpload": true,
+      "instructionType": "passport"
+    },
+    {
+      "id": "ilr-02-absence-employer-letter",
+      "sortNumber": 2,
+      "documentName": "Letter from employer confirming reason for absence",
+      "personRole": null,
+      "source": "home_office",
+      "clientUpload": true,
+      "instructionType": "absence-letter"
+    },
+    {
+      "id": "ilr-02-travel-ticket",
+      "sortNumber": 2,
+      "documentName": "Travel ticket proving absence from the UK",
+      "personRole": null,
+      "source": "home_office",
+      "clientUpload": true,
+      "instructionType": "travel-ticket"
+    },
+    {
+      "id": "ilr-03-evisa",
+      "sortNumber": 3,
+      "documentName": "E-Visa",
+      "personRole": "applicant",
+      "source": "home_office",
+      "clientUpload": true,
+      "instructionType": "evisa"
+    },
+    {
+      "id": "ilr-03-sharecode",
+      "sortNumber": 3,
+      "documentName": "Sharecode",
+      "personRole": "applicant",
+      "source": "home_office",
+      "clientUpload": true,
+      "instructionType": "sharecode"
+    },
+    {
+      "id": "ilr-04-ho-consent",
+      "sortNumber": 4,
+      "documentName": "Home office consent form",
+      "personRole": null,
+      "source": "home_office",
+      "clientUpload": true,
+      "instructionType": "ho-consent"
+    },
+    {
+      "id": "ilr-05-bank-statement",
+      "sortNumber": 5,
+      "documentName": "Bank statement",
+      "personRole": null,
+      "source": "home_office",
+      "clientUpload": true,
+      "instructionType": "bank"
+    },
+    {
+      "id": "ilr-05-payslip",
+      "sortNumber": 5,
+      "documentName": "Payslip",
+      "personRole": null,
+      "source": "home_office",
+      "clientUpload": true,
+      "instructionType": "payslip"
+    },
+    {
+      "id": "ilr-06-employer-letter",
+      "sortNumber": 6,
+      "documentName": "Letter from employer",
+      "personRole": null,
+      "source": "home_office",
+      "clientUpload": true,
+      "instructionType": "employer-letter"
+    },
+    {
+      "id": "ilr-07-cos",
+      "sortNumber": 7,
+      "documentName": "CoS",
+      "personRole": null,
+      "source": "home_office",
+      "clientUpload": true,
+      "instructionType": "cos"
+    },
+    {
+      "id": "ilr-08-brp",
+      "sortNumber": 8,
+      "documentName": "BRP",
+      "personRole": "applicant",
+      "source": "home_office",
+      "clientUpload": true,
+      "instructionType": "brp"
+    },
+    {
+      "id": "ilr-09-cover-letter",
+      "sortNumber": 9,
+      "documentName": "Cover Letter",
+      "personRole": null,
+      "source": "firm",
+      "clientUpload": false,
+      "instructionType": "cover-letter"
+    }
+  ]
+}

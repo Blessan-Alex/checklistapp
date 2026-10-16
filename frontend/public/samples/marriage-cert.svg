@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500" role="img">
+  <title>Marriage certificate</title>
+  <rect width="800" height="500" fill="#FBF9E5"/>
+  <rect x="0" y="0" width="800" height="56" fill="#4D1B7A"/>
+  <text x="24" y="36" fill="#FBF9E5" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700">Marriage certificate</text>
+  <text x="24" y="88" fill="#21173F" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="600">Official register copy — all text readable</text>
+  <rect x="160" y="110" width="480" height="330" rx="6" fill="#fff" stroke="#E3A72E" stroke-width="3"/>
+     <text x="400" y="200" text-anchor="middle" fill="#4D1B7A" font-family="Arial" font-size="20" font-weight="700">Marriage Certificate</text>
+     <text x="400" y="260" text-anchor="middle" fill="#21173F" font-family="Arial" font-size="14">Registrar seal · names · date</text>
+  <text x="24" y="478" fill="#9860C6" font-family="Arial, Helvetica, sans-serif" font-size="12">Demo placeholder — redacted example for client guidance</text>
+</svg>

@@ -1,0 +1,21 @@
+# Dependencies and build output
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# Local env and secrets
+frontend/.env*
+!.env.example
+
+# Phase 2 local persistence (SQLite + uploads)
+frontend/data/
+frontend/storage/
+
+# Vercel
+frontend/.vercel/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+*.log

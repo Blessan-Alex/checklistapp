@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500" role="img">
+  <title>Payslip</title>
+  <rect width="800" height="500" fill="#FBF9E5"/>
+  <rect x="0" y="0" width="800" height="56" fill="#4D1B7A"/>
+  <text x="24" y="36" fill="#FBF9E5" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700">Payslip</text>
+  <text x="24" y="88" fill="#21173F" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="600">Dated within one calendar month of application</text>
+  <rect x="120" y="130" width="560" height="280" rx="8" fill="#fff" stroke="#4D1B7A" stroke-width="2"/>
+     <text x="150" y="180" fill="#21173F" font-family="Arial" font-size="16" font-weight="600">Payslip</text>
+     <text x="150" y="220" fill="#621D92" font-family="Arial" font-size="14">Pay date: 15 Aug 2026</text>
+     <text x="150" y="250" fill="#621D92" font-family="Arial" font-size="14">Net pay: £ ———</text>
+  <text x="24" y="478" fill="#9860C6" font-family="Arial, Helvetica, sans-serif" font-size="12">Demo placeholder — redacted example for client guidance</text>
+</svg>
