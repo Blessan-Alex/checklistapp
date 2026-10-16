@@ -103,7 +103,7 @@ Hobby includes a small free Blob allowance (see [Vercel Blob pricing](https://ve
 2. **Root Directory:** `frontend`
 3. Deploy.
 
-First API request seeds **Dino** and **Sophy** in Firestore if the collection is empty.
+Optional: set `DEMO_SEED_CASES=true` to seed **Dino** and **Sophy** when the Firestore collection is empty (off by default in production).
 
 ---
 

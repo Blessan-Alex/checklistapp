@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { getDb, persistCase, rowToCase } from "@/lib/db/database";
-import { createDinoCase, createSophyCase } from "@/lib/mock-case-factory";
+import { buildCaseFromParsedChecklist } from "@/lib/case-from-parsed-checklist";
 import type { ParsedChecklist } from "@/lib/mock-parse";
 import type { Case } from "@/lib/types";
 import type { CaseRepository } from "./case-repository";
@@ -55,31 +55,13 @@ export class SqliteCaseRepository implements CaseRepository {
     parsed: ParsedChecklist,
     updatedAtIso: string,
   ): Promise<Case> {
-    const base =
-      parsed.caseId === "case-sophy"
-        ? createSophyCase()
-        : parsed.caseId === "case-dino"
-          ? createDinoCase()
-          : createDinoCase();
-
-    const merged: Case = {
-      ...base,
-      id: parsed.caseId,
-      route: parsed.suggestedRoute,
-      uan: parsed.uan,
-      applicantFullName: parsed.applicantFullName,
-      applicantFirstName: parsed.applicantFirstName,
-      title: parsed.title,
-      submittedDate: parsed.submittedDate,
-      productLine: parsed.productLine,
+    const existing = await this.getCaseById(parsed.caseId);
+    const merged = buildCaseFromParsedChecklist(
+      parsed,
       checklistFileName,
-      status: "draft",
-      clientToken: undefined,
-      updatedAt: updatedAtIso,
-      parseConfidence: parsed.parseConfidence,
-      checklistExtract: parsed.checklistExtract,
-    };
-
+      updatedAtIso,
+      existing,
+    );
     persistCase(getDb(), merged);
     return merged;
   }

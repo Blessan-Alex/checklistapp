@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { buildCaseFromParsedChecklist } from "@/lib/case-from-parsed-checklist";
 import { createDinoCase, createSophyCase } from "@/lib/mock-case-factory";
 import type { ParsedChecklist } from "@/lib/mock-parse";
 import { getFirebaseFirestore } from "@/lib/server/firebase-admin";
@@ -33,6 +34,9 @@ function docToCase(data: CaseDoc): Case {
 }
 
 async function seedIfEmpty(): Promise<void> {
+  if (process.env.DEMO_SEED_CASES?.trim().toLowerCase() !== "true") {
+    return;
+  }
   const db = getFirebaseFirestore();
   const snap = await db.collection(COLLECTION).limit(1).get();
   if (!snap.empty) {
@@ -106,31 +110,13 @@ export class FirestoreCaseRepository implements CaseRepository {
     parsed: ParsedChecklist,
     updatedAtIso: string,
   ): Promise<Case> {
-    const base =
-      parsed.caseId === "case-sophy"
-        ? createSophyCase()
-        : parsed.caseId === "case-dino"
-          ? createDinoCase()
-          : createDinoCase();
-
-    const merged: Case = {
-      ...base,
-      id: parsed.caseId,
-      route: parsed.suggestedRoute,
-      uan: parsed.uan,
-      applicantFullName: parsed.applicantFullName,
-      applicantFirstName: parsed.applicantFirstName,
-      title: parsed.title,
-      submittedDate: parsed.submittedDate,
-      productLine: parsed.productLine,
+    const existing = await this.getCaseById(parsed.caseId);
+    const merged = buildCaseFromParsedChecklist(
+      parsed,
       checklistFileName,
-      status: "draft",
-      clientToken: undefined,
-      updatedAt: updatedAtIso,
-      parseConfidence: parsed.parseConfidence,
-      checklistExtract: parsed.checklistExtract,
-    };
-
+      updatedAtIso,
+      existing,
+    );
     await this.saveCase(merged);
     return merged;
   }

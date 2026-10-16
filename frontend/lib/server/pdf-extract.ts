@@ -1,7 +1,8 @@
-import { randomUUID } from "node:crypto";
-import type { Case, Route } from "@/lib/types";
+import type { Case } from "@/lib/types";
 import type { ParsedChecklist } from "@/lib/mock-parse";
-import { parseChecklistFileName } from "@/lib/mock-parse";
+import { caseIdFromUan } from "@/lib/case-from-parsed-checklist";
+import { classifyChecklistRoute } from "@/lib/checklist-route";
+import { ChecklistParseError } from "@/lib/checklist-parse-errors";
 
 const UAN_RE =
   /Unique Application Number:\s*(\d{4}-\d{4}-\d{4}-\d{4})/i;
@@ -24,25 +25,6 @@ function firstNameFromFull(fullName: string): string {
   return withoutTitle[0] ?? fullName;
 }
 
-function inferRoute(productLine: string, fileName: string): Route {
-  const blob = `${productLine} ${fileName}`.toLowerCase();
-  if (
-    blob.includes("set (o)") ||
-    blob.includes("set(o)") ||
-    blob.includes("ilr")
-  ) {
-    return "ilr";
-  }
-  if (
-    blob.includes("skilled worker") ||
-    blob.includes("pbs") ||
-    blob.includes("dependant")
-  ) {
-    return "skilled_worker";
-  }
-  return "skilled_worker";
-}
-
 export type PdfParseResult = ParsedChecklist & {
   parseConfidence: "high" | "low";
   checklistExtract?: string;
@@ -58,8 +40,9 @@ export async function parseChecklistPdf(
     const parsed = await pdfParse(buffer);
     text = parsed.text ?? "";
   } catch {
-    const fallback = parseChecklistFileName(fileName);
-    return { ...fallback, parseConfidence: "low" };
+    throw new ChecklistParseError(
+      "Could not read this PDF. Try a different export or re-download the checklist from UKVI.",
+    );
   }
 
   const uanMatch = text.match(UAN_RE);
@@ -68,31 +51,21 @@ export async function parseChecklistPdf(
   const submittedMatch = text.match(SUBMITTED_RE);
 
   if (!uanMatch?.[1] || !nameMatch?.[1]) {
-    const fallback = parseChecklistFileName(fileName);
-    return { ...fallback, parseConfidence: "low" };
+    throw new ChecklistParseError(
+      "Could not find the applicant name and Unique Application Number (UAN) in this checklist. Check you uploaded the full UKVI document checklist PDF.",
+    );
   }
 
   const applicantFullName = nameMatch[1].trim();
   const productLine = (productMatch?.[1] ?? "").trim() || "UKVI checklist";
   const submittedDate = (submittedMatch?.[1] ?? "").trim().slice(0, 10);
-  const suggestedRoute = inferRoute(productLine, fileName);
-
-  const heuristic = parseChecklistFileName(fileName);
-  let caseId = `case-${randomUUID()}`;
-  if (heuristic.caseId === "case-sophy" && suggestedRoute === "ilr") {
-    caseId = "case-sophy";
-  } else if (heuristic.caseId === "case-dino" && suggestedRoute === "skilled_worker") {
-    caseId = "case-dino";
-  } else if (uanMatch[1] === "1212-0001-6479-0157") {
-    caseId = "case-dino";
-  } else if (uanMatch[1] === "1212-0001-6466-5462") {
-    caseId = "case-sophy";
-  }
+  const suggestedRoute = classifyChecklistRoute(productLine, fileName);
+  const uan = uanMatch[1];
 
   return {
-    caseId,
+    caseId: caseIdFromUan(uan),
     suggestedRoute,
-    uan: uanMatch[1],
+    uan,
     applicantFullName,
     applicantFirstName: firstNameFromFull(applicantFullName),
     title: inferTitle(applicantFullName),

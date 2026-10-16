@@ -3,6 +3,10 @@ import { MAX_STAFF_CHECKLIST_BYTES } from "@/lib/constants";
 import { getServerCaseRepository } from "@/lib/server/case-repository-server";
 import { requireStaffApiAuth } from "@/lib/server/auth";
 import { getCaseBlobStorage } from "@/lib/server/case-blob-storage";
+import {
+  ChecklistParseError,
+  UnsupportedChecklistError,
+} from "@/lib/checklist-parse-errors";
 import { parseChecklistPdf } from "@/lib/server/pdf-extract";
 
 export async function GET() {
@@ -34,22 +38,32 @@ export async function POST(request: Request) {
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const parsed = await parseChecklistPdf(buffer, file.name);
-  const updatedAtIso = new Date().toISOString();
-  const repo = getServerCaseRepository();
-  const caseRecord = await repo.upsertFromParsedChecklist(
-    file.name,
-    parsed,
-    updatedAtIso,
-  );
-  await getCaseBlobStorage().writeChecklistPdf(
-    caseRecord.id,
-    file.name,
-    buffer,
-  );
+  try {
+    const parsed = await parseChecklistPdf(buffer, file.name);
+    const updatedAtIso = new Date().toISOString();
+    const repo = getServerCaseRepository();
+    const caseRecord = await repo.upsertFromParsedChecklist(
+      file.name,
+      parsed,
+      updatedAtIso,
+    );
+    await getCaseBlobStorage().writeChecklistPdf(
+      caseRecord.id,
+      file.name,
+      buffer,
+    );
 
-  return NextResponse.json({
-    case: caseRecord,
-    parseConfidence: parsed.parseConfidence,
-  });
+    return NextResponse.json({
+      case: caseRecord,
+      parseConfidence: parsed.parseConfidence,
+    });
+  } catch (error) {
+    if (error instanceof UnsupportedChecklistError) {
+      return NextResponse.json({ error: error.message }, { status: 422 });
+    }
+    if (error instanceof ChecklistParseError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    throw error;
+  }
 }

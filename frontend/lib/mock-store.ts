@@ -1,5 +1,6 @@
 import caseDinoJson from "@/config/mock/case-dino.json";
 import caseSophyJson from "@/config/mock/case-sophy.json";
+import { buildCaseFromParsedChecklist } from "@/lib/case-from-parsed-checklist";
 import { createDinoCase, createSophyCase } from "@/lib/mock-case-factory";
 import type { ParsedChecklist } from "@/lib/mock-parse";
 import type { Case, MockStoreState, Slot } from "@/lib/types";
@@ -304,25 +305,15 @@ export function upsertCaseFromParsedChecklist(
   parsed: ParsedChecklist,
   updatedAtIso: string,
 ): Case {
-  const base =
-    parsed.caseId === "case-sophy" ? createSophyCase() : createDinoCase();
-
-  const merged: Case = {
-    ...base,
-    route: parsed.suggestedRoute,
-    uan: parsed.uan,
-    applicantFullName: parsed.applicantFullName,
-    applicantFirstName: parsed.applicantFirstName,
-    title: parsed.title,
-    submittedDate: parsed.submittedDate,
-    productLine: parsed.productLine,
-    checklistFileName,
-    status: "draft",
-    updatedAt: updatedAtIso,
-    parseConfidence: parsed.parseConfidence,
-  };
-
   const state = loadMockStore();
+  const existing = state.cases.find((c) => c.id === parsed.caseId);
+  const merged = buildCaseFromParsedChecklist(
+    parsed,
+    checklistFileName,
+    updatedAtIso,
+    existing,
+  );
+
   const index = state.cases.findIndex((c) => c.id === merged.id);
   if (index === -1) {
     state.cases.push(merged);
