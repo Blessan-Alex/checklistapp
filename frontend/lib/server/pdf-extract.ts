@@ -6,9 +6,24 @@ import { ChecklistParseError } from "@/lib/checklist-parse-errors";
 
 const UAN_RE =
   /Unique Application Number:\s*(\d{4}-\d{4}-\d{4}-\d{4})/i;
-const FULL_NAME_RE = /Applicant'?s full name:\s*(.+)/i;
-const PRODUCT_RE = /Product name\/service:\s*(.+)/i;
-const SUBMITTED_RE = /Submitted date:\s*(.+)/i;
+const FULL_NAME_RE = /Applicant['\u2019]?s full name:\s*(.+)/i;
+const PRODUCT_RE = /Product name\/service:\s*([^\n\r]+)/i;
+const SUBMITTED_RE = /Submitted date:\s*([^\n\r]+)/i;
+
+function normalizeChecklistText(raw: string): string {
+  return raw.replace(/\u2019/g, "'").replace(/\r\n/g, "\n");
+}
+
+async function extractTextFromPdfBuffer(buffer: Buffer): Promise<string> {
+  const { PDFParse } = await import("pdf-parse");
+  const parser = new PDFParse({ data: new Uint8Array(buffer) });
+  try {
+    const result = await parser.getText();
+    return result.text ?? "";
+  } finally {
+    await parser.destroy();
+  }
+}
 
 function inferTitle(fullName: string): Case["title"] {
   const lower = fullName.toLowerCase();
@@ -25,6 +40,44 @@ function firstNameFromFull(fullName: string): string {
   return withoutTitle[0] ?? fullName;
 }
 
+function extractApplicantFullName(text: string): string | undefined {
+  const match = text.match(FULL_NAME_RE);
+  if (!match?.[1]) {
+    return undefined;
+  }
+  return match[1].split(/\n/)[0]?.trim();
+}
+
+function extractProductLine(text: string): string {
+  const fromLabel = text.match(PRODUCT_RE)?.[1]?.trim();
+  if (fromLabel) {
+    return fromLabel;
+  }
+  if (/skilled worker/i.test(text)) {
+    return "Skilled Worker";
+  }
+  if (/\bset\s*\(\s*o\s*\)/i.test(text) || /\bilr\b/i.test(text)) {
+    return "Set (O) — ILR";
+  }
+  return "";
+}
+
+function extractSubmittedDateIso(text: string): string {
+  const raw = text.match(SUBMITTED_RE)?.[1]?.trim() ?? "";
+  const isoPrefix = raw.match(/(\d{4}-\d{2}-\d{2})/);
+  if (isoPrefix?.[1]) {
+    return isoPrefix[1];
+  }
+  const dmy = raw.match(/(\d{1,2})\s+(\w+)\s+(\d{4})/);
+  if (dmy) {
+    const parsed = new Date(`${dmy[2]} ${dmy[1]}, ${dmy[3]}`);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString().slice(0, 10);
+    }
+  }
+  return new Date().toISOString().slice(0, 10);
+}
+
 export type PdfParseResult = ParsedChecklist & {
   parseConfidence: "high" | "low";
   checklistExtract?: string;
@@ -36,9 +89,7 @@ export async function parseChecklistPdf(
 ): Promise<PdfParseResult> {
   let text = "";
   try {
-    const pdfParse = (await import("pdf-parse")).default;
-    const parsed = await pdfParse(buffer);
-    text = parsed.text ?? "";
+    text = normalizeChecklistText(await extractTextFromPdfBuffer(buffer));
   } catch {
     throw new ChecklistParseError(
       "Could not read this PDF. Try a different export or re-download the checklist from UKVI.",
@@ -46,20 +97,21 @@ export async function parseChecklistPdf(
   }
 
   const uanMatch = text.match(UAN_RE);
-  const nameMatch = text.match(FULL_NAME_RE);
-  const productMatch = text.match(PRODUCT_RE);
-  const submittedMatch = text.match(SUBMITTED_RE);
+  const applicantFullName = extractApplicantFullName(text);
+  const productLine = extractProductLine(text);
 
-  if (!uanMatch?.[1] || !nameMatch?.[1]) {
+  if (!uanMatch?.[1] || !applicantFullName) {
     throw new ChecklistParseError(
       "Could not find the applicant name and Unique Application Number (UAN) in this checklist. Check you uploaded the full UKVI document checklist PDF.",
     );
   }
 
-  const applicantFullName = nameMatch[1].trim();
-  const productLine = (productMatch?.[1] ?? "").trim() || "UKVI checklist";
-  const submittedDate = (submittedMatch?.[1] ?? "").trim().slice(0, 10);
-  const suggestedRoute = classifyChecklistRoute(productLine, fileName);
+  const submittedDate = extractSubmittedDateIso(text);
+  const suggestedRoute = classifyChecklistRoute(
+    productLine || "UKVI checklist",
+    fileName,
+    text,
+  );
   const uan = uanMatch[1];
 
   return {
@@ -69,9 +121,9 @@ export async function parseChecklistPdf(
     applicantFullName,
     applicantFirstName: firstNameFromFull(applicantFullName),
     title: inferTitle(applicantFullName),
-    submittedDate: submittedDate || new Date().toISOString().slice(0, 10),
-    productLine,
-    parseConfidence: productMatch ? "high" : "low",
+    submittedDate,
+    productLine: productLine || "UKVI checklist",
+    parseConfidence: productLine ? "high" : "low",
     checklistExtract: text.slice(0, 80_000),
   };
 }

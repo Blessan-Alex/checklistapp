@@ -18,8 +18,8 @@ const UNSUPPORTED_HINTS = [
   "graduate route",
   "global talent",
   "innovator",
-  "start-up",
-  "startup",
+  "start-up visa",
+  "startup visa",
 ];
 
 const ILR_HINTS = [
@@ -49,14 +49,17 @@ const SKILLED_WORKER_HINTS = [
 ];
 
 /**
- * Classify UKVI product line + filename into supported routes only.
+ * Classify UKVI checklist into supported routes only (Skilled Worker or ILR).
  * @throws UnsupportedChecklistError when not SW or ILR
  */
 export function classifyChecklistRoute(
   productLine: string,
   fileName: string,
+  checklistText = "",
 ): Route {
-  const blob = `${productLine} ${fileName}`.toLowerCase();
+  const blob = `${productLine} ${fileName} ${checklistText}`
+    .toLowerCase()
+    .slice(0, 80_000);
 
   for (const hint of UNSUPPORTED_HINTS) {
     if (blob.includes(hint)) {
