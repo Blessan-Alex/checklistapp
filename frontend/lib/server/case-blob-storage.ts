@@ -1,8 +1,8 @@
 import { createReadStream, existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { get, list, put } from "@vercel/blob";
 import { getStoragePath } from "@/lib/server/env";
 import { getDataBackend } from "@/lib/server/data-backend";
-import { getFirebaseStorageBucket } from "@/lib/server/firebase-admin";
 import {
   caseRootDir,
   extensionFromFilename,
@@ -34,6 +34,11 @@ export interface CaseBlobStorage {
 
 function safeFileName(name: string): string {
   return name.replace(/[^\w.\-() ]+/g, "_");
+}
+
+/** Vercel Blob (private store) — used on Vercel when BLOB_READ_WRITE_TOKEN is set. */
+export function usesRemoteCaseBlobStorage(): boolean {
+  return Boolean(process.env.BLOB_READ_WRITE_TOKEN?.trim());
 }
 
 class LocalCaseBlobStorage implements CaseBlobStorage {
@@ -109,9 +114,18 @@ class LocalCaseBlobStorage implements CaseBlobStorage {
   }
 }
 
-class FirebaseCaseBlobStorage implements CaseBlobStorage {
+class VercelCaseBlobStorage implements CaseBlobStorage {
   private objectPath(caseId: string, ...parts: string[]): string {
     return `cases/${caseId}/${parts.join("/")}`;
+  }
+
+  private async downloadIfExists(pathname: string): Promise<Buffer | undefined> {
+    const result = await get(pathname, { access: "private" });
+    if (!result || result.statusCode !== 200 || !result.stream) {
+      return undefined;
+    }
+    const arrayBuffer = await new Response(result.stream).arrayBuffer();
+    return Buffer.from(arrayBuffer);
   }
 
   async writeSlotUpload(
@@ -121,11 +135,11 @@ class FirebaseCaseBlobStorage implements CaseBlobStorage {
     buffer: Buffer,
   ): Promise<void> {
     const ext = extensionFromFilename(originalName);
-    const path = this.objectPath(caseId, "uploads", `${slotId}${ext}`);
-    const file = getFirebaseStorageBucket().file(path);
-    await file.save(buffer, {
-      resumable: false,
-      metadata: { contentType: "application/octet-stream" },
+    const pathname = this.objectPath(caseId, "uploads", `${slotId}${ext}`);
+    await put(pathname, buffer, {
+      access: "private",
+      addRandomSuffix: false,
+      contentType: "application/octet-stream",
     });
   }
 
@@ -134,22 +148,12 @@ class FirebaseCaseBlobStorage implements CaseBlobStorage {
     fileName: string,
     buffer: Buffer,
   ): Promise<void> {
-    const path = this.objectPath(caseId, safeFileName(fileName));
-    const file = getFirebaseStorageBucket().file(path);
-    await file.save(buffer, {
-      resumable: false,
-      metadata: { contentType: "application/pdf" },
+    const pathname = this.objectPath(caseId, safeFileName(fileName));
+    await put(pathname, buffer, {
+      access: "private",
+      addRandomSuffix: false,
+      contentType: "application/pdf",
     });
-  }
-
-  private async downloadIfExists(path: string): Promise<Buffer | undefined> {
-    const file = getFirebaseStorageBucket().file(path);
-    const [exists] = await file.exists();
-    if (!exists) {
-      return undefined;
-    }
-    const [buf] = await file.download();
-    return buf;
   }
 
   async readSlotUpload(
@@ -185,17 +189,16 @@ class FirebaseCaseBlobStorage implements CaseBlobStorage {
       }
     }
     const prefix = `cases/${caseId}/`;
-    const [files] = await getFirebaseStorageBucket().getFiles({ prefix });
-    const pdf = files.find(
-      (f) =>
-        f.name.toLowerCase().endsWith(".pdf") &&
-        !f.name.includes("/uploads/"),
+    const { blobs } = await list({ prefix, mode: "folded" });
+    const pdf = blobs.find(
+      (b) =>
+        b.pathname.toLowerCase().endsWith(".pdf") &&
+        !b.pathname.includes("/uploads/"),
     );
     if (!pdf) {
       return undefined;
     }
-    const [buf] = await pdf.download();
-    return buf;
+    return this.downloadIfExists(pdf.pathname);
   }
 }
 
@@ -203,10 +206,15 @@ let blobStorage: CaseBlobStorage | null = null;
 
 export function getCaseBlobStorage(): CaseBlobStorage {
   if (!blobStorage) {
-    blobStorage =
-      getDataBackend() === "firebase"
-        ? new FirebaseCaseBlobStorage()
-        : new LocalCaseBlobStorage();
+    if (usesRemoteCaseBlobStorage()) {
+      blobStorage = new VercelCaseBlobStorage();
+    } else if (getDataBackend() === "firebase") {
+      throw new Error(
+        "File storage is not configured: connect a Vercel Blob store to this project (BLOB_READ_WRITE_TOKEN). Firestore alone cannot store PDFs.",
+      );
+    } else {
+      blobStorage = new LocalCaseBlobStorage();
+    }
   }
   return blobStorage;
 }

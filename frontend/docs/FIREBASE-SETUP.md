@@ -8,29 +8,28 @@ Use this when the app should be **shared across staff and clients** (not browser
 |-------|--------|--------|
 | **Host** | Vercel Hobby (free) | Native Next.js 16, previews per PR |
 | **Database** | Firestore | Matches your JSON `Case` documents; free Spark quotas |
-| **Files** | Firebase Storage | Checklist PDFs + client uploads; replaces local `storage/` |
+| **Files** | **Vercel Blob** (private) | Checklist PDFs + client uploads; no Firebase Storage / Blaze required |
 | **Auth** | Existing staff cookie + `STAFF_PASSWORD_HASH` | No Firebase Auth required for MVP |
 
-Alternatives (Turso + Vercel Blob) are fine later; this repo **implements Firestore + Storage** when Firebase env vars are set.
+This repo uses **Firestore for case JSON** and **Vercel Blob for files** when Firebase env vars are set on Vercel.
 
 ---
 
 ## 1. Firebase project (Spark)
 
-**This repo is configured for project `checklistapp-ab71c`** (`checklistapp-ab71c.firebasestorage.app`).
+**This repo is configured for project `checklistapp-ab71c`**.
 
 1. [Firebase Console](https://console.firebase.google.com/) → project **checklistapp-ab71c** (or create one).
 2. **Build → Firestore** → Create database → **Production mode** (rules locked down below).
-3. **Build → Storage** → Get started → default bucket.
-4. **Project settings → Service accounts** → **Generate new private key** (JSON).
+3. **Project settings → Service accounts** → **Generate new private key** (JSON).
+
+You do **not** need Firebase Storage (or Blaze billing) for this app — files go to **Vercel Blob** (see §4).
 
 From the JSON file, copy:
 
 - `project_id` → `FIREBASE_PROJECT_ID`
 - `client_email` → `FIREBASE_CLIENT_EMAIL`
 - `private_key` → `FIREBASE_PRIVATE_KEY` (paste as one line with `\n` for newlines in Vercel)
-
-Set `FIREBASE_STORAGE_BUCKET` to `your-project-id.appspot.com` (or the bucket shown in Storage).
 
 ---
 
@@ -60,20 +59,7 @@ service cloud.firestore {
 }
 ```
 
-**Storage** (`storage.rules`):
-
-```text
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    match /{allPaths=**} {
-      allow read, write: if false;
-    }
-  }
-}
-```
-
-Publish rules in the Firebase Console. All access goes through your Vercel API routes.
+Publish Firestore rules in the Firebase Console. All data access goes through your Vercel API routes. Blob files are private and only read/written by the server (`BLOB_READ_WRITE_TOKEN`).
 
 ---
 
@@ -88,7 +74,7 @@ Publish rules in the Firebase Console. All access goes through your Vercel API r
 | `FIREBASE_PROJECT_ID` | from service account |
 | `FIREBASE_CLIENT_EMAIL` | from service account |
 | `FIREBASE_PRIVATE_KEY` | from service account (escaped newlines) |
-| `FIREBASE_STORAGE_BUCKET` | `project-id.appspot.com` |
+| `BLOB_READ_WRITE_TOKEN` | Auto-set when you connect a **Blob** store in Vercel → Storage (use a **private** store) |
 | `SESSION_SECRET` | long random string |
 | `STAFF_PASSWORD_HASH` | `bcrypt` hash of staff password |
 | `NEXT_PUBLIC_APP_URL` | `https://your-app.vercel.app` |
@@ -99,7 +85,15 @@ Generate password hash locally:
 node -e "console.log(require('bcryptjs').hashSync('your-password', 10))"
 ```
 
-**Do not** set `DATABASE_URL` or `STORAGE_PATH` on Vercel for Firebase mode.
+**Do not** set `DATABASE_URL`, `STORAGE_PATH`, or `FIREBASE_STORAGE_BUCKET` on Vercel for production.
+
+### Vercel Blob (files)
+
+1. Vercel project → **Storage** → **Create** → **Blob** → name e.g. `checklist-files` → **Private**.
+2. Connect the store to this project. Vercel adds `BLOB_READ_WRITE_TOKEN`.
+3. Redeploy after connecting.
+
+Hobby includes a small free Blob allowance (see [Vercel Blob pricing](https://vercel.com/docs/vercel-blob/usage-and-pricing)).
 
 ---
 

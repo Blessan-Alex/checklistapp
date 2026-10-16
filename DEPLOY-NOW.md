@@ -15,9 +15,7 @@ From that JSON you will set on Vercel:
 - `FIREBASE_PROJECT_ID` = `checklistapp-ab71c`
 - `FIREBASE_CLIENT_EMAIL` = `firebase-adminsdk-....@checklistapp-ab71c.iam.gserviceaccount.com`
 - `FIREBASE_PRIVATE_KEY` = paste the `private_key` field (Vercel: use real newlines or `\n`)
-- `FIREBASE_STORAGE_BUCKET` = `checklistapp-ab71c.firebasestorage.app`
-
-Enable **Firestore** and **Storage** in the console if not already.
+Enable **Firestore** in the console if not already. **Files** use **Vercel Blob** (not Firebase Storage).
 
 Lock rules (deny public access) — copy from [frontend/docs/FIREBASE-SETUP.md](frontend/docs/FIREBASE-SETUP.md).
 
@@ -55,14 +53,15 @@ git push -u origin main
 | `NEXT_PUBLIC_USE_MOCK_STORE` | `false` |
 | `DATA_BACKEND` | `firebase` |
 | `FIREBASE_PROJECT_ID` | `checklistapp-ab71c` |
-| `FIREBASE_STORAGE_BUCKET` | `checklistapp-ab71c.firebasestorage.app` |
 | `FIREBASE_CLIENT_EMAIL` | from service account JSON |
 | `FIREBASE_PRIVATE_KEY` | from service account JSON |
 | `SESSION_SECRET` | long random string (32+ chars) |
 | `STAFF_PASSWORD_HASH` | run `node frontend/scripts/hash-staff-password.mjs YourPassword` |
 | `NEXT_PUBLIC_APP_URL` | `https://YOUR-PROJECT.vercel.app` |
 
-4. **Redeploy** (Deployments → … → Redeploy)
+4. **Storage → Blob** → create a **private** store → connect to this project (`BLOB_READ_WRITE_TOKEN` is set automatically)
+5. Remove `FIREBASE_STORAGE_BUCKET` if you added it earlier
+6. **Redeploy** (Deployments → … → Redeploy)
 
 **Pitch-only demo (no Firebase):** set only `NEXT_PUBLIC_USE_MOCK_STORE=true` and skip Firebase vars.
 

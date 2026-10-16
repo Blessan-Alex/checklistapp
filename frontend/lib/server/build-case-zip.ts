@@ -6,14 +6,14 @@ import {
   getCaseBlobStorage,
   getLocalChecklistStreamPath,
   getLocalSlotUploadStreamPath,
+  usesRemoteCaseBlobStorage,
 } from "@/lib/server/case-blob-storage";
-import { getDataBackend } from "@/lib/server/data-backend";
 import { getArchiveRootName, slotDocumentZipName } from "@/lib/zip-manifest";
 
 export async function buildCaseZipBuffer(caseRecord: Case): Promise<Buffer> {
   const root = getArchiveRootName(caseRecord);
   const storage = getCaseBlobStorage();
-  const useFirebase = getDataBackend() === "firebase";
+  const useRemoteBlob = usesRemoteCaseBlobStorage();
 
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
@@ -30,7 +30,7 @@ export async function buildCaseZipBuffer(caseRecord: Case): Promise<Buffer> {
             continue;
           }
           const entryName = `${root}/Documents/${slotDocumentZipName(slot)}`;
-          if (useFirebase) {
+          if (useRemoteBlob) {
             const buf = await storage.readSlotUpload(
               caseRecord.id,
               slot.id,
@@ -53,7 +53,7 @@ export async function buildCaseZipBuffer(caseRecord: Case): Promise<Buffer> {
           }
         }
 
-        if (useFirebase) {
+        if (useRemoteBlob) {
           const checklistBuf = await storage.readChecklistPdf(
             caseRecord.id,
             caseRecord.checklistFileName,

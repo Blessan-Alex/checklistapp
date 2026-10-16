@@ -1,6 +1,5 @@
 import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
-import { getStorage } from "firebase-admin/storage";
 
 let firestoreDb: Firestore | null = null;
 
@@ -24,13 +23,9 @@ export function getFirebaseApp(): App {
     /\\n/g,
     "\n",
   );
-  const storageBucket =
-    process.env.FIREBASE_STORAGE_BUCKET?.trim() ||
-    `${projectId}.appspot.com`;
 
   return initializeApp({
     credential: cert({ projectId, clientEmail, privateKey }),
-    storageBucket,
   });
 }
 
@@ -40,8 +35,4 @@ export function getFirebaseFirestore(): Firestore {
     firestoreDb.settings({ ignoreUndefinedProperties: true });
   }
   return firestoreDb;
-}
-
-export function getFirebaseStorageBucket() {
-  return getStorage(getFirebaseApp()).bucket();
 }

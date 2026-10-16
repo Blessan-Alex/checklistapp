@@ -9,7 +9,7 @@ This document maps **what you have today**, what works on **Vercel Hobby (free)*
 | Goal | Recommendation |
 |------|----------------|
 | **Founder demo live URL (fastest)** | Vercel + `NEXT_PUBLIC_USE_MOCK_STORE=true` (default). No Firebase required. |
-| **Real multi-user / shared cases on serverless** | Do **not** use local SQLite + `./storage` on Vercel. Add **Firestore + Firebase Storage** (Spark free) or **Turso + Vercel Blob**. |
+| **Real multi-user / shared cases on serverless** | Do **not** use local SQLite + `./storage` on Vercel. Use **Firestore (Spark) + Vercel Blob** (implemented). |
 | **Firebase free plan** | Use **Spark** for Firestore + Storage (+ optional Auth). Host the app on **Vercel**, not Firebase Hosting (one host is enough). |
 
 ---
@@ -101,7 +101,7 @@ Firebase **Hosting** is optional; you already chose **Vercel** for Next.js.
 Code paths:
 
 - `lib/repositories/firestore-case-repository.ts` — Firestore `portal_cases`
-- `lib/server/case-blob-storage.ts` — Firebase Storage vs local disk
+- `lib/server/case-blob-storage.ts` — Vercel Blob vs local disk
 - `lib/server/data-backend.ts` — auto-selects Firebase when env vars are set
 - `lib/server/case-repository-server.ts` — single entry for all API routes
 
