@@ -11,7 +11,7 @@ export interface FirmBranding {
   contactEmail: string;
 }
 
-const DEFAULT_NAME = "L-Cedar Immigration";
+const DEFAULT_NAME = "Document upload";
 
 export function getFirmBranding(): FirmBranding {
   return {
@@ -23,8 +23,6 @@ export function getFirmBranding(): FirmBranding {
     privacyPolicyUrl:
       process.env.NEXT_PUBLIC_PRIVACY_URL?.trim() ||
       "https://www.gov.uk/help/privacy-policy",
-    contactEmail:
-      process.env.NEXT_PUBLIC_FIRM_CONTACT_EMAIL?.trim() ||
-      "enquiries@lcedar.example",
+    contactEmail: process.env.NEXT_PUBLIC_FIRM_CONTACT_EMAIL?.trim() || "",
   };
 }

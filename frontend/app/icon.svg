@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <rect width="32" height="32" rx="6" fill="#621d92"/>
-  <text x="16" y="21" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#fbf9e5">LC</text>
+  <path fill="#fbf9e5" d="M11 9h7l4 4v12a1 1 0 0 1-1 1H11a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1z"/>
+  <path fill="#621d92" d="M18 9v4h4"/>
 </svg>

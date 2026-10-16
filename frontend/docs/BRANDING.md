@@ -6,11 +6,11 @@ Configure the client portal and staff UI without code changes.
 
 | Variable | Purpose | Default |
 |----------|---------|---------|
-| `NEXT_PUBLIC_FIRM_NAME` | Header, footer, emails | `L-Cedar Immigration` |
+| `NEXT_PUBLIC_FIRM_NAME` | Header, footer, emails | `Document upload` |
 | `NEXT_PUBLIC_FIRM_LOGO_URL` | Logo image URL or path under `public/` | `/brand/firm-logo.svg` |
 | `NEXT_PUBLIC_CLIENT_PORTAL_DOMAIN` | Shown in footer (custom domain) | (empty) |
 | `NEXT_PUBLIC_PRIVACY_URL` | Footer privacy link | GOV.UK privacy placeholder |
-| `NEXT_PUBLIC_FIRM_CONTACT_EMAIL` | Footer mailto link | `enquiries@lcedar.example` |
+| `NEXT_PUBLIC_FIRM_CONTACT_EMAIL` | Footer mailto link | (empty — set to show Contact) |
 
 ## Logo upload
 

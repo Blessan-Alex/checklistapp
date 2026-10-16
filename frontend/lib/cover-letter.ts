@@ -1,3 +1,4 @@
+import { getFirmBranding } from "@/lib/firm-branding";
 import type { Case, CoverLetterDraft, Route } from "@/lib/types";
 
 export type { CoverLetterDraft };
@@ -23,6 +24,7 @@ export function buildCoverLetterPlainText(
   caseRecord: Case,
   draft: CoverLetterDraft,
 ): string {
+  const firmName = getFirmBranding().name;
   const submitted = caseRecord.submittedDate || "—";
   const uan = caseRecord.uan;
   const applicant = `${caseRecord.title} ${caseRecord.applicantFullName}`;
@@ -52,7 +54,7 @@ export function buildCoverLetterPlainText(
       notes ? `Additional notes:\n${notes}\n` : "",
       "Yours faithfully,",
       "",
-      "L-Cedar Immigration",
+      firmName,
     ]
       .filter(Boolean)
       .join("\n");
@@ -84,7 +86,7 @@ export function buildCoverLetterPlainText(
     notes ? `Additional notes:\n${notes}\n` : "",
     "Yours faithfully,",
     "",
-    "L-Cedar Immigration",
+    firmName,
   ]
     .filter(Boolean)
     .join("\n");

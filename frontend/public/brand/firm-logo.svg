@@ -1,4 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="L-Cedar">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Document upload">
   <rect width="64" height="64" rx="12" fill="#621d92"/>
-  <text x="32" y="40" text-anchor="middle" font-family="system-ui,sans-serif" font-size="22" font-weight="700" fill="#fbf9e5">LC</text>
+  <path fill="#fbf9e5" d="M22 18h14l8 8v22a2 2 0 0 1-2 2H22a2 2 0 0 1-2-2V20a2 2 0 0 1 2-2z"/>
+  <path fill="#621d92" d="M36 18v8h8"/>
+  <path stroke="#621d92" stroke-width="2" stroke-linecap="round" d="M26 34h16M26 40h12"/>
 </svg>

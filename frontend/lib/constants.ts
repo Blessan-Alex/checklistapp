@@ -1,6 +1,6 @@
 import { getFirmBranding } from "@/lib/firm-branding";
 
-/** Display name for the immigration firm (configurable via `NEXT_PUBLIC_FIRM_NAME`). */
+/** App display name (configurable via `NEXT_PUBLIC_FIRM_NAME`). */
 export const FIRM_NAME = getFirmBranding().name;
 
 /** Client upload limit (PRODUCT-SPEC §11). Vercel serverless body ~4.5 MB — cap on Vercel. */

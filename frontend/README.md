@@ -1,4 +1,4 @@
-# L-Cedar Immigration — frontend
+# Document upload — frontend
 
 Next.js App Router UI for the immigration document checklist (staff + client portals).
 

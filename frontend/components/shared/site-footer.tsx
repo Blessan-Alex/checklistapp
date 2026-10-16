@@ -34,13 +34,17 @@ export function SiteFooter({ className }: { className?: string }) {
         >
           Privacy
         </Link>
-        <span aria-hidden className="mx-2">·</span>
-        <a
-          href={`mailto:${brand.contactEmail}`}
-          className="underline underline-offset-2 hover:text-foreground"
-        >
-          Contact
-        </a>
+        {brand.contactEmail ? (
+          <>
+            <span aria-hidden className="mx-2">·</span>
+            <a
+              href={`mailto:${brand.contactEmail}`}
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              Contact
+            </a>
+          </>
+        ) : null}
       </p>
     </footer>
   );
