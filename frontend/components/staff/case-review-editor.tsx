@@ -192,7 +192,7 @@ export function CaseReviewEditor({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       {showParseWarning ? (
         <Alert className="border-[var(--brand-golden-ochre)]/50 bg-[color-mix(in_srgb,var(--brand-golden-ochre)_12%,var(--brand-warm-ivory))]">
           <AlertTriangle className="size-4" aria-hidden />

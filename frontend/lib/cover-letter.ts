@@ -108,7 +108,7 @@ export function buildCoverLetterHtml(
 export function coverLetterDownloadName(caseRecord: Case): string {
   const slot = caseRecord.slots.find((s) => s.instructionType === "cover-letter");
   const base = slot?.targetFileName ?? "Cover Letter";
-  return `${base}.txt`;
+  return `${base}.docx`;
 }
 
 export function routeCoverLetterLabel(route: Route): string {

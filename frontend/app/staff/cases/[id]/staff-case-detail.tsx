@@ -105,56 +105,66 @@ export function StaffCaseDetail({
 
   return (
     <StaffAppShell activeNav="cases">
-      <div className="space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-1">
+      <div className="min-w-0 space-y-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-semibold text-primary">
+              <h1 className="text-xl font-semibold text-primary sm:text-2xl">
                 {caseRecord.applicantFullName}
               </h1>
               <RouteBadge route={caseRecord.route} />
               <StatusChip status={caseRecord.status} />
             </div>
             <p className="text-sm text-muted-foreground">
-              UAN <span className="font-mono">{caseRecord.uan}</span>
-              <span className="mx-2 text-border">·</span>
-              Client progress{" "}
-              <span className="font-medium text-foreground">
-                {progress.completed}/{progress.total}
+              UAN <span className="break-all font-mono">{caseRecord.uan}</span>
+              <span className="mx-2 hidden text-border sm:inline">·</span>
+              <span className="mt-1 block sm:mt-0 sm:inline">
+                Client progress{" "}
+                <span className="font-medium text-foreground">
+                  {progress.completed}/{progress.total}
+                </span>
               </span>
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center lg:w-auto lg:justify-end">
             {caseRecord.clientToken ? (
               <CopyLinkButton
                 url={clientPortalUrl(caseRecord.clientToken)}
                 label="Copy client link"
+                className="w-full sm:w-auto"
               />
             ) : null}
             <Link
               href={ROUTES.staffCaseReview(caseRecord.id)}
               className={cn(
                 buttonVariants({ variant: "ghost", size: "sm" }),
-                "min-h-9 text-muted-foreground",
+                "min-h-11 w-full justify-center text-muted-foreground sm:w-auto sm:min-h-9",
               )}
             >
               Edit checklist
             </Link>
-            <InternalGuidanceDrawer />
+            <InternalGuidanceDrawer
+              className="min-h-11 w-full justify-center gap-1.5 text-muted-foreground sm:min-h-9 sm:w-auto"
+            />
           </div>
         </div>
 
         <ReopenCaseCard caseRecord={caseRecord} onUpdated={refreshCase} />
 
         <Tabs defaultValue="documents" className="w-full">
-          <TabsList className="h-9 w-full max-w-xs bg-muted/50">
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="cover-letter" className="text-muted-foreground">
+          <TabsList className="grid h-auto w-full max-w-full grid-cols-2 gap-1 bg-muted/50 p-1 sm:max-w-md">
+            <TabsTrigger value="documents" className="min-h-11 px-2">
+              Documents
+            </TabsTrigger>
+            <TabsTrigger
+              value="cover-letter"
+              className="min-h-11 px-2 text-muted-foreground"
+            >
               Cover letter
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="documents" className="mt-6">
-            <div className="grid gap-6 lg:grid-cols-[1fr_minmax(16rem,20rem)] lg:items-start">
+          <TabsContent value="documents" className="mt-6 min-w-0">
+            <div className="grid min-w-0 gap-6 xl:grid-cols-[1fr_minmax(16rem,20rem)] xl:items-start">
               <section className="space-y-3">
                 <StaffDocumentPack
                   caseRecord={caseRecord}

@@ -107,6 +107,10 @@ export function ClientSlotDetail({
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [payloadTooLarge, setPayloadTooLarge] = useState(false);
 
+  useEffect(() => {
+    setPayloadTooLarge(false);
+  }, [token, slotId]);
+
   const slot = caseRecord?.slots.find((s) => s.id === slotId);
   const locked = caseRecord ? isClientPortalLocked(caseRecord) : false;
 
@@ -118,12 +122,6 @@ export function ClientSlotDetail({
 
   if (!ready) {
     return null;
-  }
-
-  if (payloadTooLarge) {
-    return (
-      <ClientPayloadTooLarge backHref={ROUTES.clientSlot(token, slotId)} />
-    );
   }
 
   if (unauthorized) {
@@ -193,6 +191,7 @@ export function ClientSlotDetail({
     if (locked || !caseRecord || !slot || uploading) {
       return;
     }
+    setPayloadTooLarge(false);
 
     if (slot.upload) {
       setPendingFile(file);
@@ -294,12 +293,19 @@ export function ClientSlotDetail({
             Uploads are closed — you have already submitted your documents.
           </p>
         ) : (
-          <UploadDropzone
-            onFileSelect={handleFileSelect}
-            disabled={uploading}
-            uploading={uploading}
-            uploadProgress={uploadProgress}
-          />
+          <>
+            {payloadTooLarge ? (
+              <ClientPayloadTooLarge
+                onTryAgain={() => setPayloadTooLarge(false)}
+              />
+            ) : null}
+            <UploadDropzone
+              onFileSelect={handleFileSelect}
+              disabled={uploading}
+              uploading={uploading}
+              uploadProgress={uploadProgress}
+            />
+          </>
         )}
 
         <ReplaceFileDialog

@@ -14,9 +14,9 @@ import {
 } from "@/components/ui/card";
 import { useMockDataSource } from "@/lib/data-source";
 import { useSaveCaseMutation } from "@/lib/hooks/use-case-api";
+import { buildCoverLetterDocxBlob } from "@/lib/cover-letter-docx";
 import {
   buildCoverLetterHtml,
-  buildCoverLetterPlainText,
   coverLetterDownloadName,
   defaultCoverLetterDraft,
   routeCoverLetterLabel,
@@ -99,22 +99,23 @@ export function CoverLetterPanel({
     }
   }
 
-  function handleDownloadPreview() {
-    const text = buildCoverLetterPlainText(caseRecord, draft);
-    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = coverLetterDownloadName(caseRecord);
-    anchor.click();
-    URL.revokeObjectURL(url);
-    toast.success("Cover letter downloaded", {
-      description: "Plain-text preview until DOCX generation is wired.",
-    });
+  async function handleDownloadPreview() {
+    try {
+      const blob = await buildCoverLetterDocxBlob(caseRecord, draft);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = coverLetterDownloadName(caseRecord);
+      anchor.click();
+      URL.revokeObjectURL(url);
+      toast.success("Cover letter downloaded");
+    } catch {
+      toast.error("Could not generate Word document");
+    }
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="grid min-w-0 gap-6 xl:grid-cols-2">
       <Card className="border-border/80">
         <CardHeader>
           <CardTitle className="text-base">
@@ -200,18 +201,18 @@ export function CoverLetterPanel({
             />
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             <Button
               type="button"
               variant="outline"
-              className="min-h-11"
+              className="min-h-11 w-full sm:w-auto"
               onClick={() => void handleSaveFields()}
             >
               Save fields
             </Button>
             <Button
               type="button"
-              className="min-h-11 gap-2"
+              className="min-h-11 w-full gap-2 sm:w-auto"
               onClick={() => void handleRegenerate()}
             >
               <RefreshCw className="size-4" aria-hidden />
@@ -220,11 +221,11 @@ export function CoverLetterPanel({
             <Button
               type="button"
               variant="secondary"
-              className="min-h-11 gap-2"
-              onClick={handleDownloadPreview}
+              className="min-h-11 w-full gap-2 sm:w-auto"
+              onClick={() => void handleDownloadPreview()}
             >
               <Download className="size-4" aria-hidden />
-              Download preview
+              Download DOCX
             </Button>
           </div>
           {draft.lastGeneratedAt ? (

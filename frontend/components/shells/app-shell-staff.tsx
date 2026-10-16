@@ -23,9 +23,9 @@ export function AppShellStaff({
   return (
     <div className={cn("flex min-h-full flex-col bg-background", className)}>
       <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4">
-          <FirmLogo href="/staff/cases" />
-          <nav className="flex items-center gap-1 sm:gap-2">
+        <div className="mx-auto flex min-w-0 max-w-6xl flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3 py-2 sm:h-14 sm:flex-nowrap sm:gap-4 sm:px-4 sm:py-0">
+          <FirmLogo href="/staff/cases" className="min-w-0 shrink" />
+          <nav className="order-3 flex w-full min-w-0 items-center gap-1 sm:order-none sm:w-auto sm:gap-2">
             <Link
               href="/staff/cases"
               className={cn(
@@ -51,7 +51,7 @@ export function AppShellStaff({
               <span className="sm:hidden">New</span>
             </Link>
           </nav>
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex min-w-0 shrink-0 items-center gap-1 sm:gap-2">
             {demoToolbar}
             {!demoToolbar ? (
               <Badge
@@ -74,7 +74,9 @@ export function AppShellStaff({
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>
+      <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 px-3 py-4 sm:px-4 sm:py-6">
+        {children}
+      </main>
     </div>
   );
 }

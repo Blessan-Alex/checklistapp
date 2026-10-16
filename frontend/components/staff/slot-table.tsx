@@ -49,9 +49,9 @@ export function SlotTable({
   const showActions = showStaffActions && Boolean(onRejectSlot);
 
   return (
-    <div className={className}>
-      <div className="hidden overflow-x-auto rounded-lg border md:block">
-        <Table>
+    <div className={cn("min-w-0", className)}>
+      <div className="hidden min-w-0 overflow-x-auto rounded-lg border lg:block">
+        <Table className="min-w-[52rem]">
           <TableHeader>
             <TableRow>
               <TableHead className="w-12">#</TableHead>
@@ -129,7 +129,7 @@ export function SlotTable({
         </Table>
       </div>
 
-      <ul className="space-y-3 md:hidden">
+      <ul className="space-y-3 lg:hidden">
         {slots.map((slot) => {
           const rejected = isSlotRejected(slot);
           return (

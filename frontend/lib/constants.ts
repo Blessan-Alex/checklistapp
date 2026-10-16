@@ -8,6 +8,11 @@ export const MAX_CLIENT_FILE_BYTES =
   Number(process.env.NEXT_PUBLIC_MAX_CLIENT_FILE_BYTES) ||
   (process.env.VERCEL ? 4 * 1024 * 1024 : 7 * 1024 * 1024);
 
+export const MAX_CLIENT_FILE_MB = Math.max(
+  1,
+  Math.round(MAX_CLIENT_FILE_BYTES / (1024 * 1024)),
+);
+
 /** Staff checklist PDF upload (PRODUCT-SPEC §11). */
 export const MAX_STAFF_CHECKLIST_BYTES = 15 * 1024 * 1024;
 

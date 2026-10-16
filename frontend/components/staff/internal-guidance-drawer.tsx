@@ -53,7 +53,10 @@ export function InternalGuidanceDrawer({
         type="button"
         variant="ghost"
         size="sm"
-        className={className ?? "min-h-9 gap-1.5 text-muted-foreground"}
+        className={
+          className ??
+          "min-h-11 w-full justify-center gap-1.5 text-muted-foreground sm:min-h-9 sm:w-auto"
+        }
         onClick={() => setOpen(true)}
       >
         <BookMarked className="size-4" aria-hidden />

@@ -151,7 +151,7 @@ export function CasesList() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <div>
         <h1 className="text-2xl font-semibold text-primary">Cases</h1>
         <p className="text-sm text-muted-foreground">
@@ -168,7 +168,7 @@ export function CasesList() {
           placeholder="Search by name or UAN"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="max-w-md"
+          className="w-full max-w-md"
         />
         <details className="group max-w-md text-sm">
           <summary
@@ -233,8 +233,8 @@ export function CasesList() {
         </p>
       ) : null}
 
-      <div className="hidden overflow-hidden rounded-lg border md:block">
-        <Table>
+      <div className="hidden min-w-0 overflow-x-auto rounded-lg border lg:block">
+        <Table className="min-w-[44rem]">
           <TableHeader>
             <TableRow>
               <TableHead>Applicant</TableHead>
@@ -279,7 +279,7 @@ export function CasesList() {
         </Table>
       </div>
 
-      <ul className="space-y-3 md:hidden">
+      <ul className="space-y-3 lg:hidden">
         {filtered.map((caseRecord) => {
           const progress = clientUploadProgress(caseRecord);
           return (

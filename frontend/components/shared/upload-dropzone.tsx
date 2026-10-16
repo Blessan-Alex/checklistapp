@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { CloudUpload, FileWarning, Loader2 } from "lucide-react";
-import { MAX_CLIENT_FILE_BYTES } from "@/lib/constants";
+import { MAX_CLIENT_FILE_BYTES, MAX_CLIENT_FILE_MB } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import {
   Progress,
@@ -28,7 +28,7 @@ export function UploadDropzone({
   onFileSelect,
   accept = DEFAULT_ACCEPT,
   maxBytes = MAX_CLIENT_FILE_BYTES,
-  hint = "PDF, JPG, or PNG · max 7 MB per file",
+  hint = `PDF, JPG, or PNG · max ${MAX_CLIENT_FILE_MB} MB per file`,
   className,
   disabled = false,
   uploading = false,
