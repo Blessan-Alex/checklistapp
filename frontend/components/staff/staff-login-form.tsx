@@ -28,7 +28,7 @@ export function StaffLoginForm() {
   const searchParams = useSearchParams();
   const sessionExpired = searchParams.get("reason") === "401";
   const mockData = useMockDataSource();
-  const [password, setPassword] = useState("demo");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -88,11 +88,8 @@ export function StaffLoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
-                placeholder="demo"
+                placeholder="Staff password"
               />
-              <p className="text-xs text-muted-foreground">
-                Demo password: <span className="font-mono">demo</span>
-              </p>
             </div>
             {error ? (
               <p className="text-sm text-destructive" role="alert">{error}</p>

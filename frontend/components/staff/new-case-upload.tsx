@@ -33,8 +33,10 @@ export function NewCaseUpload() {
         .then((result) => {
           router.push(ROUTES.staffCaseReview(result.case.id));
         })
-        .catch(() => {
-          toast.error("Could not read checklist PDF");
+        .catch((error: unknown) => {
+          const message =
+            error instanceof Error ? error.message : "Could not create case";
+          toast.error(message.includes("PDF") ? message : "Could not create case");
         })
         .finally(() => setParsing(false));
       return;

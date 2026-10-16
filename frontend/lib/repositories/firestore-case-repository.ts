@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { createDinoCase, createSophyCase } from "@/lib/mock-case-factory";
 import type { ParsedChecklist } from "@/lib/mock-parse";
 import { getFirebaseFirestore } from "@/lib/server/firebase-admin";
+import { stripUndefined } from "@/lib/server/firestore-sanitize";
 import type { Case } from "@/lib/types";
 import type { CaseRepository } from "./case-repository";
 import { LEGACY_CLIENT_TOKENS } from "./legacy-client-tokens";
@@ -13,6 +14,14 @@ type CaseDoc = {
   clientToken: string | null;
   updatedAt: string;
 };
+
+function toFirestoreDoc(caseRecord: Case, updatedAt: string): CaseDoc {
+  return stripUndefined({
+    case: stripUndefined({ ...caseRecord, updatedAt }),
+    clientToken: caseRecord.clientToken ?? null,
+    updatedAt,
+  });
+}
 
 function docToCase(data: CaseDoc): Case {
   const caseRecord = data.case;
@@ -33,11 +42,10 @@ async function seedIfEmpty(): Promise<void> {
   const now = new Date().toISOString();
   for (const seed of [createDinoCase(), createSophyCase()]) {
     const ref = db.collection(COLLECTION).doc(seed.id);
-    batch.set(ref, {
-      case: seed,
-      clientToken: seed.clientToken ?? null,
-      updatedAt: seed.updatedAt ?? now,
-    });
+    batch.set(
+      ref,
+      toFirestoreDoc(seed, seed.updatedAt ?? now),
+    );
   }
   await batch.commit();
 }
@@ -80,16 +88,16 @@ export class FirestoreCaseRepository implements CaseRepository {
   }
 
   async saveCase(caseRecord: Case): Promise<Case> {
+    const updatedAt = new Date().toISOString();
     const updated: Case = {
       ...caseRecord,
-      updatedAt: new Date().toISOString(),
+      updatedAt,
     };
     const db = getFirebaseFirestore();
-    await db.collection(COLLECTION).doc(updated.id).set({
-      case: updated,
-      clientToken: updated.clientToken ?? null,
-      updatedAt: updated.updatedAt,
-    });
+    await db
+      .collection(COLLECTION)
+      .doc(updated.id)
+      .set(toFirestoreDoc(updated, updatedAt));
     return updated;
   }
 

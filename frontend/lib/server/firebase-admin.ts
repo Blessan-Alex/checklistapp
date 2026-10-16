@@ -1,6 +1,8 @@
 import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
+import { getFirestore, type Firestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
+
+let firestoreDb: Firestore | null = null;
 
 function requireFirebaseEnv(name: string): string {
   const value = process.env[name]?.trim();
@@ -32,8 +34,12 @@ export function getFirebaseApp(): App {
   });
 }
 
-export function getFirebaseFirestore() {
-  return getFirestore(getFirebaseApp());
+export function getFirebaseFirestore(): Firestore {
+  if (!firestoreDb) {
+    firestoreDb = getFirestore(getFirebaseApp());
+    firestoreDb.settings({ ignoreUndefinedProperties: true });
+  }
+  return firestoreDb;
 }
 
 export function getFirebaseStorageBucket() {
