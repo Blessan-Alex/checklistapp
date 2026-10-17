@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { RouteBadge } from "@/components/shared/route-badge";
@@ -20,9 +20,8 @@ import {
 } from "@/components/ui/table";
 import { ROUTES } from "@/config/routes";
 import type { Case, CaseStatus, Route } from "@/lib/types";
-import { ApiError } from "@/lib/api-client";
 import { useCasesQuery } from "@/lib/hooks/use-case-api";
-import { clearStaffAuth } from "@/lib/staff-auth";
+import { useStaffUnauthorizedRedirect } from "@/lib/hooks/use-staff-unauthorized-redirect";
 import { clientUploadProgress } from "@/lib/client-portal";
 import { staffCaseHref } from "@/lib/staff-routes";
 import { cn } from "@/lib/utils";
@@ -99,16 +98,7 @@ export function CasesList() {
     setDeleteTarget(null);
   }
 
-  const sessionExpired =
-    apiQuery.error instanceof ApiError && apiQuery.error.status === 401;
-
-  useEffect(() => {
-    if (!sessionExpired) {
-      return;
-    }
-    clearStaffAuth();
-    router.replace(`${ROUTES.staffLogin}?reason=401`);
-  }, [sessionExpired, router]);
+  const sessionExpired = useStaffUnauthorizedRedirect(apiQuery.error);
 
   if (sessionExpired) {
     return null;

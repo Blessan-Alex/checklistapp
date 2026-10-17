@@ -31,6 +31,12 @@ export function useCaseQuery(caseId: string | null) {
       staffCaseNeedsLivePolling(query.state.data as Case | undefined)
         ? LIVE_CASE_REFETCH_MS
         : false,
+    retry: (failureCount, error) => {
+      if (error instanceof ApiError && error.status === 401) {
+        return false;
+      }
+      return failureCount < 1;
+    },
   });
 }
 

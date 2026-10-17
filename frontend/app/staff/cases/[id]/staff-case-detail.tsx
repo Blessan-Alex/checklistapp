@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { StaffAppShell } from "@/components/staff/staff-app-shell";
 import { DeleteCaseCard } from "@/components/staff/delete-case-card";
@@ -21,19 +21,13 @@ import { RouteBadge } from "@/components/shared/route-badge";
 import { StatusChip } from "@/components/shared/status-chip";
 import { buttonVariants } from "@/components/ui/button";
 import { ROUTES } from "@/config/routes";
+import { StaffCaseLoading } from "@/components/staff/staff-case-loading";
+import { clientPortalAbsoluteUrl } from "@/lib/client-portal-url";
 import { clientUploadProgress } from "@/lib/client-portal";
 import { useStaffCaseLiveNotifications } from "@/lib/hooks/use-case-live-updates";
-import { useCaseQuery } from "@/lib/hooks/use-case-api";
+import { useStaffCasePage } from "@/lib/hooks/use-staff-case-page";
 import { caseAwaitingStaffReview } from "@/lib/staff-review";
-import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-function clientPortalUrl(token: string): string {
-  if (typeof window === "undefined") {
-    return ROUTES.clientPortal(token);
-  }
-  return `${window.location.origin}${ROUTES.clientPortal(token)}`;
-}
 
 export function StaffCaseDetail({
   params,
@@ -41,57 +35,30 @@ export function StaffCaseDetail({
   params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
-  const [caseId, setCaseId] = useState<string | null>(null);
-
-  useEffect(() => {
-    void params.then(({ id }) => setCaseId(id));
-  }, [params]);
-
-  const apiQuery = useCaseQuery(caseId);
-  const caseRecord = apiQuery.data;
+  const { caseRecord, showLoading, sessionExpired, notFound, refreshCase } =
+    useStaffCasePage(params);
 
   useStaffCaseLiveNotifications(caseRecord);
 
-  const refreshCase = useCallback(() => {
-    void apiQuery.refetch();
-  }, [apiQuery]);
-
   useEffect(() => {
-    if (!caseId) {
-      return;
-    }
-    if (apiQuery.isError) {
-      router.replace(ROUTES.staffCases);
-    }
-  }, [caseId, apiQuery.isError, router]);
-
-  useEffect(() => {
-    if (!caseId || !caseRecord) {
+    if (!caseRecord) {
       return;
     }
     if (caseRecord.status === "draft") {
       router.replace(ROUTES.staffCaseReview(caseRecord.id));
     }
-  }, [caseId, caseRecord, router]);
+  }, [caseRecord, router]);
 
-  if (!caseRecord) {
-    if (apiQuery.isLoading) {
-      return (
-        <StaffAppShell activeNav="cases">
-          <div className="flex min-h-[40vh] items-center justify-center">
-            <Loader2
-              className="size-8 animate-spin text-primary"
-              aria-label="Loading case"
-            />
-          </div>
-        </StaffAppShell>
-      );
-    }
+  if (sessionExpired || notFound) {
     return null;
   }
 
+  if (showLoading || !caseRecord) {
+    return <StaffCaseLoading />;
+  }
+
   if (caseRecord.status === "draft") {
-    return null;
+    return <StaffCaseLoading />;
   }
 
   const progress = clientUploadProgress(caseRecord);
@@ -125,7 +92,7 @@ export function StaffCaseDetail({
           <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center lg:w-auto lg:justify-end">
             {caseRecord.clientToken ? (
               <CopyLinkButton
-                url={clientPortalUrl(caseRecord.clientToken)}
+                url={clientPortalAbsoluteUrl(caseRecord.clientToken)}
                 label="Copy client link"
                 className="w-full sm:w-auto"
               />

@@ -8,6 +8,7 @@ import { AddSlotDialog } from "@/components/staff/add-slot-dialog";
 import { InternalGuidanceDrawer } from "@/components/staff/internal-guidance-drawer";
 import { PublishDialog } from "@/components/staff/publish-dialog";
 import { SlotTable } from "@/components/staff/slot-table";
+import { CopyLinkButton } from "@/components/shared/copy-link-button";
 import { RouteBadge } from "@/components/shared/route-badge";
 import { StatusChip } from "@/components/shared/status-chip";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ROUTES } from "@/config/routes";
+import { clientPortalAbsoluteUrl } from "@/lib/client-portal-url";
 import {
   createManualSlot,
   createSuggestedPreviousPassportsSlot,
@@ -121,7 +122,7 @@ export function CaseReviewEditor({
       const result = await publishMutation.mutateAsync(draft.id);
       setDraft(result.case);
       setPublishedUrl(result.clientUrl);
-      toast.success("Case published");
+      toast.success("Case published — share the client link below");
     } catch {
       toast.error("Could not publish case");
     }
@@ -203,7 +204,14 @@ export function CaseReviewEditor({
             {clientUploadCount} client uploads
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-1">
+        <div className="flex flex-wrap items-center gap-2">
+          {draft.clientToken ? (
+            <CopyLinkButton
+              url={clientPortalAbsoluteUrl(draft.clientToken)}
+              label="Copy client link"
+              className="min-h-10"
+            />
+          ) : null}
           <InternalGuidanceDrawer />
           <Button
             type="button"

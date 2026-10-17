@@ -2,10 +2,11 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { staffSessionQueryKey } from "@/lib/hooks/use-staff-session";
 import { FIRM_NAME } from "@/lib/constants";
 import { ROUTES } from "@/config/routes";
 import { api } from "@/lib/api-client";
-import { setStaffApiAuthed } from "@/lib/staff-auth";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,6 +20,7 @@ import { Label } from "@/components/ui/label";
 
 export function StaffLoginForm() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const sessionExpired = searchParams.get("reason") === "401";
   const [password, setPassword] = useState("");
@@ -35,7 +37,7 @@ export function StaffLoginForm() {
     setSubmitting(true);
     try {
       await api.login(password);
-      setStaffApiAuthed();
+      await queryClient.invalidateQueries({ queryKey: staffSessionQueryKey });
       router.push(ROUTES.staffCases);
     } catch {
       setError("Invalid password.");

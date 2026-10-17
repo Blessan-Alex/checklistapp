@@ -1,51 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { StaffAppShell } from "@/components/staff/staff-app-shell";
 import { CaseReviewEditor } from "@/components/staff/case-review-editor";
-import { ROUTES } from "@/config/routes";
-import { useCaseQuery } from "@/lib/hooks/use-case-api";
-import { Loader2 } from "lucide-react";
+import { StaffCaseLoading } from "@/components/staff/staff-case-loading";
+import { useStaffCasePage } from "@/lib/hooks/use-staff-case-page";
 
 export function StaffCaseReview({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const router = useRouter();
-  const [caseId, setCaseId] = useState<string | null>(null);
+  const { caseRecord, showLoading, sessionExpired, notFound } =
+    useStaffCasePage(params);
 
-  useEffect(() => {
-    void params.then(({ id }) => setCaseId(id));
-  }, [params]);
-
-  const apiQuery = useCaseQuery(caseId);
-  const caseRecord = apiQuery.data;
-
-  useEffect(() => {
-    if (!caseId) {
-      return;
-    }
-    if (apiQuery.isError) {
-      router.replace(ROUTES.staffCases);
-    }
-  }, [caseId, apiQuery.isError, router]);
-
-  if (!caseRecord) {
-    if (apiQuery.isLoading) {
-      return (
-        <StaffAppShell activeNav="cases">
-          <div className="flex min-h-[40vh] items-center justify-center">
-            <Loader2
-              className="size-8 animate-spin text-primary"
-              aria-label="Loading case"
-            />
-          </div>
-        </StaffAppShell>
-      );
-    }
+  if (sessionExpired || notFound) {
     return null;
+  }
+
+  if (showLoading || !caseRecord) {
+    return <StaffCaseLoading />;
   }
 
   return (

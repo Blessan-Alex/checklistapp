@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { ROUTES } from "@/config/routes";
-import { isStaffAuthed } from "@/lib/staff-auth";
+import { useStaffSession } from "@/lib/hooks/use-staff-session";
 import { Loader2 } from "lucide-react";
 
 const PUBLIC_STAFF_PATHS = new Set<string>([ROUTES.staffLogin]);
@@ -11,10 +11,15 @@ const PUBLIC_STAFF_PATHS = new Set<string>([ROUTES.staffLogin]);
 export function StaffRouteGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const authed = isStaffAuthed();
+  const sessionQuery = useStaffSession();
   const isPublic = PUBLIC_STAFF_PATHS.has(pathname);
+  const authed = sessionQuery.isSuccess;
+  const sessionReady = sessionQuery.isFetched;
 
   useEffect(() => {
+    if (!sessionReady) {
+      return;
+    }
     if (isPublic && authed) {
       router.replace(ROUTES.staffCases);
       return;
@@ -22,9 +27,10 @@ export function StaffRouteGuard({ children }: { children: React.ReactNode }) {
     if (!isPublic && !authed) {
       router.replace(ROUTES.staffLogin);
     }
-  }, [isPublic, authed, router]);
+  }, [isPublic, authed, sessionReady, router]);
 
-  const ready = (isPublic && !authed) || (!isPublic && authed);
+  const ready =
+    sessionReady && ((isPublic && !authed) || (!isPublic && authed));
 
   if (!ready) {
     return (
