@@ -2,6 +2,11 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, api, queryKeys } from "@/lib/api-client";
+import {
+  clientCaseNeedsLivePolling,
+  LIVE_CASE_REFETCH_MS,
+  staffCaseNeedsLivePolling,
+} from "@/lib/hooks/use-case-live-updates";
 import type { Case } from "@/lib/types";
 
 export function useCasesQuery() {
@@ -22,6 +27,10 @@ export function useCaseQuery(caseId: string | null) {
     queryKey: queryKeys.case(caseId ?? ""),
     queryFn: async () => (await api.getCase(caseId!)).case,
     enabled: Boolean(caseId),
+    refetchInterval: (query) =>
+      staffCaseNeedsLivePolling(query.state.data as Case | undefined)
+        ? LIVE_CASE_REFETCH_MS
+        : false,
   });
 }
 
@@ -31,6 +40,10 @@ export function useClientCaseQuery(token: string) {
     queryFn: async () => (await api.getClientCase(token)).case,
     enabled: Boolean(token),
     refetchOnWindowFocus: true,
+    refetchInterval: (query) =>
+      clientCaseNeedsLivePolling(query.state.data as Case | undefined)
+        ? LIVE_CASE_REFETCH_MS
+        : false,
     retry: (failureCount, error) => {
       if (error instanceof ApiError && (error.status === 404 || error.status === 401)) {
         return false;

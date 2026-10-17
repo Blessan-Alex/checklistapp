@@ -187,7 +187,7 @@ export function StaffDocumentReview({
     }
     try {
       await api.rejectSlotUpload(caseRecord.id, rejectSlot.id, message);
-      toast.success("Client will see your message on this slot");
+      toast.success("Sent to client — you can keep reviewing other documents");
       onUpdated?.();
     } catch {
       toast.error("Could not send to client");
@@ -244,6 +244,12 @@ export function StaffDocumentReview({
             </>
           ) : null}
         </p>
+        {counts.rejected > 0 ? (
+          <p className="mt-2 text-sm text-muted-foreground">
+            The client can replace rejected items while you review the rest. The
+            pack stays submitted until every document is approved.
+          </p>
+        ) : null}
       </div>
 
       <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(11rem,16rem)_1fr]">

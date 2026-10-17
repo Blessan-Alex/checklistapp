@@ -1,5 +1,8 @@
 import type { Case, Slot } from "@/lib/types";
-import { isClientSlotComplete } from "@/lib/slot-status";
+import {
+  isClientSlotComplete,
+  slotNeedsClientReplacement,
+} from "@/lib/slot-status";
 
 export function isClientPortalLocked(caseRecord: Case): boolean {
   return (
@@ -7,6 +10,24 @@ export function isClientPortalLocked(caseRecord: Case): boolean {
     caseRecord.status === "ready_to_zip" ||
     caseRecord.status === "zip_ready"
   );
+}
+
+/** Client may upload to this slot (full pack or a rejected item after submit). */
+export function canClientWriteSlot(caseRecord: Case, slot: Slot): boolean {
+  if (!slot.clientUpload) {
+    return false;
+  }
+  if (caseRecord.status === "live" || caseRecord.status === "client_in_progress") {
+    return true;
+  }
+  if (caseRecord.status === "submitted") {
+    return slotNeedsClientReplacement(slot);
+  }
+  return false;
+}
+
+export function caseHasOpenClientReplacements(caseRecord: Case): boolean {
+  return caseRecord.slots.some((slot) => slotNeedsClientReplacement(slot));
 }
 
 export function clientUploadSlots(slots: Slot[]): Slot[] {

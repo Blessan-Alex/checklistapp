@@ -13,7 +13,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ROUTES } from "@/config/routes";
 import {
   allClientUploadsComplete,
+  canClientWriteSlot,
+  caseHasOpenClientReplacements,
   clientUploadProgress,
+  isClientPortalLocked,
 } from "@/lib/client-portal";
 import { isSlotRejected } from "@/lib/slot-status";
 import { useClientCase } from "@/lib/use-client-case";
@@ -109,14 +112,14 @@ export function ClientHub({
             </AlertDescription>
           </Alert>
         ) : null}
-        {locked ? (
+        {locked && !caseHasOpenClientReplacements(caseRecord) ? (
           <p className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-foreground">
             We&apos;re reviewing your documents. You&apos;ll hear from your
             adviser if anything needs to change.
           </p>
         ) : null}
 
-        {!locked && replacementSlots.length > 0 ? (
+        {replacementSlots.length > 0 ? (
           <Alert
             className="border-[var(--brand-golden-ochre)]/60 bg-[color-mix(in_srgb,var(--brand-golden-ochre)_12%,var(--brand-warm-ivory))]"
           >
@@ -158,7 +161,10 @@ export function ClientHub({
                   <SlotCard
                     slot={slot}
                     href={ROUTES.clientSlot(token, slot.id)}
-                    disabled={locked}
+                    disabled={
+                      isClientPortalLocked(caseRecord) &&
+                      !canClientWriteSlot(caseRecord, slot)
+                    }
                   />
                 </li>
               );

@@ -17,7 +17,11 @@ import { UploadDropzone } from "@/components/shared/upload-dropzone";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/config/routes";
-import { clientUploadProgress, isClientPortalLocked } from "@/lib/client-portal";
+import {
+  canClientWriteSlot,
+  clientUploadProgress,
+} from "@/lib/client-portal";
+import { clientUploadUserMessage } from "@/lib/client-upload-user-messages";
 import { isSlotRejected } from "@/lib/slot-status";
 import { api, queryKeys } from "@/lib/api-client";
 import {
@@ -133,7 +137,8 @@ export function ClientSlotDetail({
   }, []);
 
   const slot = caseRecord?.slots.find((s) => s.id === slotId);
-  const locked = caseRecord ? isClientPortalLocked(caseRecord) : false;
+  const slotWritable =
+    caseRecord && slot ? canClientWriteSlot(caseRecord, slot) : false;
 
   useEffect(() => {
     if (ready && caseRecord && !slot) {
@@ -217,15 +222,17 @@ export function ClientSlotDetail({
             return;
           }
           if (error.kind === "too_large") {
+            setUploadError({ kind: "too_large", message: error.message });
             setPayloadTooLarge(true);
             return;
           }
           setUploadError({ kind: error.kind, message: error.message });
           return;
         }
+        const fallback = clientUploadUserMessage("unknown");
         setUploadError({
           kind: "unknown",
-          message: "Upload failed. Please try again.",
+          message: fallback.reason,
         });
       })
       .finally(() => {
@@ -241,13 +248,13 @@ export function ClientSlotDetail({
 
   function retryLastUpload() {
     const file = lastFileRef.current;
-    if (file && !locked) {
+    if (file && slotWritable) {
       startApiUpload(file);
     }
   }
 
   function handleFileSelect(file: File) {
-    if (locked || !caseRecord || !slot || uploading) {
+    if (!slotWritable || !caseRecord || !slot || uploading) {
       return;
     }
     setPayloadTooLarge(false);
@@ -339,7 +346,7 @@ export function ClientSlotDetail({
             variant="outline"
             className="min-h-11 w-full"
             onClick={handleDownloadConsent}
-            disabled={locked}
+            disabled={!slotWritable}
           >
             Download blank form
           </Button>
@@ -352,7 +359,7 @@ export function ClientSlotDetail({
           />
         ) : null}
 
-        {locked && slot.upload ? (
+        {!slotWritable && slot.upload ? (
           <div className="space-y-2">
             <p className="text-sm font-medium text-foreground">Your upload</p>
             {mimeTypeFromFilename(slot.upload.name) === "application/pdf" ? (
@@ -378,9 +385,11 @@ export function ClientSlotDetail({
           </div>
         ) : null}
 
-        {locked ? (
+        {!slotWritable ? (
           <p className="text-sm text-muted-foreground">
-            Uploads are closed — you have already submitted your documents.
+            {isSlotRejected(slot)
+              ? "This slot is not open for upload right now. Contact your adviser if you need help."
+              : "Uploads are closed — you have already submitted this document."}
           </p>
         ) : (
           <>
@@ -409,6 +418,7 @@ export function ClientSlotDetail({
             {payloadTooLarge ? (
               <ClientPayloadTooLarge
                 onTryAgain={() => setPayloadTooLarge(false)}
+                reason={uploadError?.kind === "too_large" ? uploadError.message : undefined}
               />
             ) : null}
             {uploading ? (

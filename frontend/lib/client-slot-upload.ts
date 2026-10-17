@@ -1,6 +1,7 @@
 import { upload } from "@vercel/blob/client";
 import type { Case } from "@/lib/types";
 import { USE_CLIENT_BLOB_UPLOADS } from "@/lib/constants";
+import { clientUploadUserMessage } from "@/lib/client-upload-user-messages";
 import { validateClientUploadSize } from "@/lib/client-upload-validation";
 import { slotUploadBlobPathname } from "@/lib/slot-upload-pathname";
 import { ApiError } from "@/lib/api-client";
@@ -48,49 +49,24 @@ function classifyUploadFailure(
   if (message.toLowerCase().includes("cancel")) {
     return cancelledError();
   }
+
+  let kind: ClientUploadErrorKind = "unknown";
   if (typeof navigator !== "undefined" && !navigator.onLine && status === 0) {
-    return new ClientSlotUploadError(
-      "You appear to be offline. Check your connection and try again.",
-      "offline",
-      0,
-    );
+    kind = "offline";
+  } else if (status === 413) {
+    kind = "too_large";
+  } else if (status === 403) {
+    kind = "locked";
+  } else if (status === 408) {
+    kind = "timeout";
+  } else if (status === 0) {
+    kind = "offline";
+  } else if (isRetryableStatus(status)) {
+    kind = "server_busy";
   }
-  if (status === 413) {
-    return new ClientSlotUploadError(message, "too_large", 413);
-  }
-  if (status === 403) {
-    return new ClientSlotUploadError(
-      message || "Uploads are closed for this checklist.",
-      "locked",
-      403,
-    );
-  }
-  if (status === 408) {
-    return new ClientSlotUploadError(
-      "Upload took too long. Please try again.",
-      "timeout",
-      408,
-    );
-  }
-  if (status === 0) {
-    return new ClientSlotUploadError(
-      "Upload interrupted. Please try again.",
-      "offline",
-      0,
-    );
-  }
-  if (isRetryableStatus(status)) {
-    return new ClientSlotUploadError(
-      "Server is busy. Please try again.",
-      "server_busy",
-      status,
-    );
-  }
-  return new ClientSlotUploadError(
-    message || "Upload failed. Please try again.",
-    "unknown",
-    status,
-  );
+
+  const userFacing = clientUploadUserMessage(kind, message);
+  return new ClientSlotUploadError(userFacing.reason, kind, status);
 }
 
 function delay(ms: number): Promise<void> {

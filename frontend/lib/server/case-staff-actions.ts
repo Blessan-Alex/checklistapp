@@ -30,6 +30,18 @@ export async function rejectClientSlotUpload(
   if (caseRecord.status === "draft") {
     throw new CaseStaffActionError("Publish the case before reviewing uploads", 400);
   }
+  if (!caseAwaitingStaffReviewStatus(caseRecord.status)) {
+    throw new CaseStaffActionError(
+      "Review is available after the client submits",
+      400,
+    );
+  }
+  if (caseRecord.status !== "submitted") {
+    throw new CaseStaffActionError(
+      "Reject documents while the pack is in review, before it is marked ready",
+      400,
+    );
+  }
 
   const slot = caseRecord.slots.find((s) => s.id === slotId);
   if (!slot || !slot.clientUpload) {
@@ -51,18 +63,8 @@ export async function rejectClientSlotUpload(
       : s,
   );
 
-  let status = caseRecord.status;
-  if (
-    status === "submitted" ||
-    status === "ready_to_zip" ||
-    status === "zip_ready"
-  ) {
-    status = "client_in_progress";
-  }
-
   return repo.saveCase({
     ...caseRecord,
-    status,
     slots,
     updatedAt: rejectedAt,
   });

@@ -1,6 +1,10 @@
 import { clientUploadSizeError } from "@/lib/client-upload-validation";
 import { MAX_CLIENT_FILE_BYTES } from "@/lib/constants";
-import { allClientUploadsComplete, isClientPortalLocked } from "@/lib/client-portal";
+import {
+  allClientUploadsComplete,
+  canClientWriteSlot,
+  isClientPortalLocked,
+} from "@/lib/client-portal";
 import { getCaseBlobStorage } from "@/lib/server/case-blob-storage";
 import { getServerCaseRepository } from "@/lib/server/case-repository-server";
 import { validateClientUploadBuffer } from "@/lib/server/client-upload-validation";
@@ -23,7 +27,28 @@ export async function getWritableClientCase(token: string): Promise<Case> {
     throw new ClientCaseError("Not found", 404);
   }
   if (isClientPortalLocked(caseRecord)) {
-    throw new ClientCaseError("This checklist is locked after submission.", 403);
+    throw new ClientCaseError(
+      "This checklist has already been submitted.",
+      403,
+    );
+  }
+  return caseRecord;
+}
+
+export async function assertClientCanUploadToSlot(
+  token: string,
+  slotId: string,
+): Promise<Case> {
+  const caseRecord = await getClientCaseForPortal(token);
+  const slot = caseRecord.slots.find((s) => s.id === slotId);
+  if (!slot?.clientUpload) {
+    throw new ClientCaseError("This document slot is not available.", 404);
+  }
+  if (!canClientWriteSlot(caseRecord, slot)) {
+    throw new ClientCaseError(
+      "Uploads are closed for this checklist except where your adviser asked for an updated file.",
+      403,
+    );
   }
   return caseRecord;
 }
@@ -53,11 +78,7 @@ export async function attachClientSlotUploadMetadata(
   uploadedAt?: string,
 ): Promise<Case> {
   const repo = getServerCaseRepository();
-  const caseRecord = await getWritableClientCase(token);
-  const slot = caseRecord.slots.find((s) => s.id === slotId);
-  if (!slot || !slot.clientUpload) {
-    throw new ClientCaseError("Invalid slot", 404);
-  }
+  const caseRecord = await assertClientCanUploadToSlot(token, slotId);
 
   const sizeError = clientUploadSizeError(sizeBytes);
   if (sizeError) {
@@ -100,11 +121,7 @@ export async function saveClientSlotUpload(
   originalName: string,
   mimeType: string,
 ): Promise<Case> {
-  const caseRecord = await getWritableClientCase(token);
-  const slot = caseRecord.slots.find((s) => s.id === slotId);
-  if (!slot || !slot.clientUpload) {
-    throw new ClientCaseError("Invalid slot", 404);
-  }
+  const caseRecord = await assertClientCanUploadToSlot(token, slotId);
 
   const validationError = validateClientUploadBuffer(
     buffer,
@@ -139,7 +156,7 @@ export async function confirmClientSlotUploadAfterStorage(
   originalName: string,
   uploadedAt?: string,
 ): Promise<Case> {
-  const caseRecord = await getWritableClientCase(token);
+  const caseRecord = await assertClientCanUploadToSlot(token, slotId);
   const buffer = await getCaseBlobStorage().readSlotUpload(
     caseRecord.id,
     slotId,

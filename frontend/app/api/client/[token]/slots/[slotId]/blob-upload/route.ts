@@ -4,7 +4,7 @@ import { MAX_CLIENT_FILE_BYTES } from "@/lib/constants";
 import {
   ClientCaseError,
   expectedSlotUploadPathname,
-  getWritableClientCase,
+  assertClientCanUploadToSlot,
 } from "@/lib/server/client-case-service";
 import { usesRemoteCaseBlobStorage } from "@/lib/server/case-blob-storage";
 
@@ -27,11 +27,7 @@ export async function POST(
       body,
       request,
       onBeforeGenerateToken: async (pathname, clientPayload) => {
-        const caseRecord = await getWritableClientCase(token);
-        const slot = caseRecord.slots.find((s) => s.id === slotId);
-        if (!slot?.clientUpload) {
-          throw new Error("Invalid slot");
-        }
+        const caseRecord = await assertClientCanUploadToSlot(token, slotId);
 
         let originalName = "upload.bin";
         let size = 0;

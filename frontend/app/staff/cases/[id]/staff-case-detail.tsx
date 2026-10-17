@@ -22,6 +22,7 @@ import { StatusChip } from "@/components/shared/status-chip";
 import { buttonVariants } from "@/components/ui/button";
 import { ROUTES } from "@/config/routes";
 import { clientUploadProgress } from "@/lib/client-portal";
+import { useStaffCaseLiveNotifications } from "@/lib/hooks/use-case-live-updates";
 import { useCaseQuery } from "@/lib/hooks/use-case-api";
 import { caseAwaitingStaffReview } from "@/lib/staff-review";
 import { Loader2 } from "lucide-react";
@@ -48,6 +49,8 @@ export function StaffCaseDetail({
 
   const apiQuery = useCaseQuery(caseId);
   const caseRecord = apiQuery.data;
+
+  useStaffCaseLiveNotifications(caseRecord);
 
   const refreshCase = useCallback(() => {
     void apiQuery.refetch();

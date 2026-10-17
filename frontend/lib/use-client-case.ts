@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import { isClientPortalLocked } from "@/lib/client-portal";
 import { ApiError } from "@/lib/api-client";
+import { useClientCaseLiveNotifications } from "@/lib/hooks/use-case-live-updates";
 import { useClientCaseQuery } from "@/lib/hooks/use-case-api";
 
 export function useClientCase(token: string) {
@@ -17,6 +18,8 @@ export function useClientCase(token: string) {
 
   const ready = !apiQuery.isLoading;
   const caseRecord = apiQuery.data;
+
+  useClientCaseLiveNotifications(caseRecord);
   const notFound = ready && apiError?.status === 404;
   const unauthorized = ready && apiError?.status === 401;
   const offline =

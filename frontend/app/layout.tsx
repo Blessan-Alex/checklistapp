@@ -61,7 +61,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full min-w-0 flex-col overflow-x-hidden font-sans">
         <QueryProvider>
           {children}
-          <Toaster richColors closeButton position="top-center" />
+          <Toaster richColors closeButton position="top-right" />
         </QueryProvider>
       </body>
     </html>
