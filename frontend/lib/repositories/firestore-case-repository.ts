@@ -144,6 +144,17 @@ export class FirestoreCaseRepository implements CaseRepository {
       clientToken: token,
     });
   }
+
+  async deleteCase(caseId: string): Promise<boolean> {
+    const db = getFirebaseFirestore();
+    const ref = db.collection(COLLECTION).doc(caseId);
+    const doc = await ref.get();
+    if (!doc.exists) {
+      return false;
+    }
+    await ref.delete();
+    return true;
+  }
 }
 
 export const firestoreCaseRepository = new FirestoreCaseRepository();

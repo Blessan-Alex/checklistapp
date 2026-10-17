@@ -1,6 +1,6 @@
 import { createReadStream, existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { get, list, put } from "@vercel/blob";
+import { del, get, list, put } from "@vercel/blob";
 import { getStoragePath } from "@/lib/server/env";
 import { getDataBackend } from "@/lib/server/data-backend";
 import {
@@ -30,6 +30,7 @@ export interface CaseBlobStorage {
     caseId: string,
     checklistFileName?: string,
   ): Promise<Buffer | undefined>;
+  deleteAllCaseFiles(caseId: string): Promise<void>;
 }
 
 function safeFileName(name: string): string {
@@ -111,6 +112,15 @@ class LocalCaseBlobStorage implements CaseBlobStorage {
     }
     const { readFileSync } = await import("node:fs");
     return readFileSync(path);
+  }
+
+  async deleteAllCaseFiles(caseId: string): Promise<void> {
+    const root = caseRootDir(caseId);
+    if (!existsSync(root)) {
+      return;
+    }
+    const { rmSync } = await import("node:fs");
+    rmSync(root, { recursive: true, force: true });
   }
 }
 
@@ -200,6 +210,18 @@ class VercelCaseBlobStorage implements CaseBlobStorage {
     }
     return this.downloadIfExists(pdf.pathname);
   }
+
+  async deleteAllCaseFiles(caseId: string): Promise<void> {
+    const prefix = `cases/${caseId}/`;
+    let cursor: string | undefined;
+    do {
+      const page = await list({ prefix, cursor });
+      if (page.blobs.length > 0) {
+        await del(page.blobs.map((blob) => blob.url));
+      }
+      cursor = page.hasMore ? page.cursor : undefined;
+    } while (cursor);
+  }
 }
 
 let blobStorage: CaseBlobStorage | null = null;
@@ -217,6 +239,18 @@ export function getCaseBlobStorage(): CaseBlobStorage {
     }
   }
   return blobStorage;
+}
+
+/** Remove all checklist and upload files for a case from Blob or local disk. */
+export async function deleteCaseBlobStorage(caseId: string): Promise<void> {
+  if (usesRemoteCaseBlobStorage()) {
+    await getCaseBlobStorage().deleteAllCaseFiles(caseId);
+    return;
+  }
+  if (getDataBackend() === "firebase") {
+    return;
+  }
+  await new LocalCaseBlobStorage().deleteAllCaseFiles(caseId);
 }
 
 /** For zip streaming from local disk only (SQLite path). */

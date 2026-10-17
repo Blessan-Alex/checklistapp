@@ -13,4 +13,5 @@ export interface CaseRepository {
     updatedAtIso: string,
   ): Promise<Case>;
   publishCase(caseId: string, clientToken?: string): Promise<Case | undefined>;
+  deleteCase(caseId: string): Promise<boolean>;
 }

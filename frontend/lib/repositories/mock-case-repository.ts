@@ -1,5 +1,6 @@
 import type { ParsedChecklist } from "@/lib/mock-parse";
 import {
+  deleteCaseRecord,
   getCaseByClientToken,
   getCaseById,
   getCases,
@@ -47,6 +48,10 @@ export class MockCaseRepository implements CaseRepository {
   ): Promise<Case | undefined> {
     void clientToken;
     return mockPublish(caseId);
+  }
+
+  async deleteCase(caseId: string): Promise<boolean> {
+    return deleteCaseRecord(caseId);
   }
 
   /** Demo tokens (`demo-dino`) — API mode uses UUIDs instead. */

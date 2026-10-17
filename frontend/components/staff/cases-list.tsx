@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
+import { Trash2 } from "lucide-react";
 import { RouteBadge } from "@/components/shared/route-badge";
 import { StatusChip } from "@/components/shared/status-chip";
-import { buttonVariants } from "@/components/ui/button";
+import { DeleteCaseDialog } from "@/components/staff/delete-case-dialog";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -70,6 +72,7 @@ export function CasesList() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("updated");
   const [search, setSearch] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<Case | null>(null);
 
   const cases = useMemo(
     () => (mockData ? mockCases : (apiQuery.data ?? [])),
@@ -106,6 +109,10 @@ export function CasesList() {
 
   function openCase(caseRecord: Case) {
     router.push(staffCaseHref(caseRecord));
+  }
+
+  function handleCaseDeleted() {
+    setDeleteTarget(null);
   }
 
   const sessionExpired =
@@ -244,6 +251,7 @@ export function CasesList() {
               <TableHead>Status</TableHead>
               <TableHead>Progress</TableHead>
               <TableHead className="hidden lg:table-cell">Updated</TableHead>
+              <TableHead className="w-24 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -273,6 +281,21 @@ export function CasesList() {
                   <TableCell className="hidden text-muted-foreground lg:table-cell">
                     {formatUpdated(caseRecord.updatedAt)}
                   </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="min-h-9 text-destructive hover:text-destructive"
+                      aria-label={`Delete case for ${caseRecord.applicantFullName}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setDeleteTarget(caseRecord);
+                      }}
+                    >
+                      <Trash2 className="size-4" aria-hidden />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               );
             })}
@@ -284,12 +307,12 @@ export function CasesList() {
         {filtered.map((caseRecord) => {
           const progress = clientUploadProgress(caseRecord);
           return (
-            <li key={caseRecord.id}>
+            <li key={caseRecord.id} className="relative">
               <button
                 type="button"
                 onClick={() => openCase(caseRecord)}
                 className={cn(
-                  "w-full rounded-xl border border-border bg-card p-4 text-left shadow-sm transition hover:border-primary/40",
+                  "w-full rounded-xl border border-border bg-card p-4 pr-14 text-left shadow-sm transition hover:border-primary/40",
                   "min-h-[72px]",
                 )}
               >
@@ -312,10 +335,33 @@ export function CasesList() {
                   </span>
                 </div>
               </button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-3 top-3 min-h-9 min-w-9 p-0 text-destructive hover:text-destructive"
+                aria-label={`Delete case for ${caseRecord.applicantFullName}`}
+                onClick={() => setDeleteTarget(caseRecord)}
+              >
+                <Trash2 className="size-4" aria-hidden />
+              </Button>
             </li>
           );
         })}
       </ul>
+
+      {deleteTarget ? (
+        <DeleteCaseDialog
+          caseRecord={deleteTarget}
+          open={Boolean(deleteTarget)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setDeleteTarget(null);
+            }
+          }}
+          onDeleted={handleCaseDeleted}
+        />
+      ) : null}
     </div>
   );
 }

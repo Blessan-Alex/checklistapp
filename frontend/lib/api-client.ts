@@ -94,6 +94,13 @@ export const api = {
     });
   },
 
+  deleteCase(id: string, confirmName: string) {
+    return apiFetch<void>(`/api/cases/${id}`, {
+      method: "DELETE",
+      body: JSON.stringify({ confirmName }),
+    });
+  },
+
   publishCase(id: string) {
     return apiFetch<{ case: Case; clientUrl: string }>(
       `/api/cases/${id}/publish`,

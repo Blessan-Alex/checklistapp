@@ -92,6 +92,14 @@ export class SqliteCaseRepository implements CaseRepository {
     persistCase(getDb(), updated);
     return updated;
   }
+
+  async deleteCase(caseId: string): Promise<boolean> {
+    const database = getDb();
+    const result = database
+      .prepare("DELETE FROM cases WHERE id = ?")
+      .run(caseId);
+    return result.changes > 0;
+  }
 }
 
 export const sqliteCaseRepository = new SqliteCaseRepository();

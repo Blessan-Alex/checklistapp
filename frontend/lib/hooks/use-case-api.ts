@@ -83,6 +83,23 @@ export function useCreateCaseMutation() {
   });
 }
 
+export function useDeleteCaseMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      confirmName,
+    }: {
+      id: string;
+      confirmName: string;
+    }) => api.deleteCase(id, confirmName),
+    onSuccess: (_void, { id }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.cases });
+      queryClient.removeQueries({ queryKey: queryKeys.case(id) });
+    },
+  });
+}
+
 export function useClientSlotUploadMutation(token: string) {
   const queryClient = useQueryClient();
   return useMutation({

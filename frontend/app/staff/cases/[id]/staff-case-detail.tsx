@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { StaffAppShell } from "@/components/staff/staff-app-shell";
+import { DeleteCaseCard } from "@/components/staff/delete-case-card";
 import { DemoShortcutsCard } from "@/components/staff/demo-shortcuts-card";
 import { InternalGuidanceDrawer } from "@/components/staff/internal-guidance-drawer";
 import { ReopenCaseCard } from "@/components/staff/reopen-case-card";
@@ -189,6 +190,11 @@ export function StaffCaseDetail({
             />
           </TabsContent>
         </Tabs>
+
+        <DeleteCaseCard
+          caseRecord={caseRecord}
+          onDeleted={() => router.replace(ROUTES.staffCases)}
+        />
 
         {mockData ? (
           <DemoShortcutsCard

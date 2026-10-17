@@ -411,6 +411,18 @@ export function saveCaseRecord(caseRecord: Case): Case {
   return caseRecord;
 }
 
+export function deleteCaseRecord(caseId: string): boolean {
+  const state = loadMockStore();
+  const index = state.cases.findIndex((c) => c.id === caseId);
+  if (index === -1) {
+    return false;
+  }
+  state.cases.splice(index, 1);
+  saveMockStore(state);
+  notifyMockStoreChanged();
+  return true;
+}
+
 export function publishCase(caseId: string): Case | undefined {
   const current = getCaseById(caseId);
   if (!current) {
