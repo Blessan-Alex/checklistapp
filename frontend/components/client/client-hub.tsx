@@ -8,7 +8,7 @@ import { ExportInstructionsButton } from "@/components/client/export-instruction
 import { ClientNotFound } from "@/components/client/client-not-found";
 import { ClientUnauthorized } from "@/components/client/client-unauthorized";
 import { SlotCard } from "@/components/client/slot-card";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ROUTES } from "@/config/routes";
 import {
@@ -35,7 +35,7 @@ export function ClientHub({
   token: string;
   generalInstructions: string;
 }) {
-  const { caseRecord, ready, locked, offline, notFound, unauthorized } =
+  const { caseRecord, ready, locked, offline, notFound, unauthorized, refresh } =
     useClientCase(token);
 
   if (!ready) {
@@ -55,6 +55,30 @@ export function ClientHub({
 
   if (unauthorized) {
     return <ClientUnauthorized />;
+  }
+
+  if (offline && !caseRecord) {
+    return (
+      <AppShellClient
+        applicantFirstName="…"
+        completed={0}
+        total={1}
+        homeHref={ROUTES.clientPortal(token)}
+      >
+        <Alert variant="destructive">
+          <AlertTitle>Connection problem</AlertTitle>
+          <AlertDescription className="space-y-3">
+            <p>
+              We could not load your checklist from the server. Check your
+              connection and try again.
+            </p>
+            <Button type="button" variant="outline" className="min-h-11" onClick={refresh}>
+              Try again
+            </Button>
+          </AlertDescription>
+        </Alert>
+      </AppShellClient>
+    );
   }
 
   if (notFound || !caseRecord) {

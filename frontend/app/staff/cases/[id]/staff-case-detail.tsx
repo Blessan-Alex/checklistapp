@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { StaffAppShell } from "@/components/staff/staff-app-shell";
 import { DeleteCaseCard } from "@/components/staff/delete-case-card";
-import { DemoShortcutsCard } from "@/components/staff/demo-shortcuts-card";
 import { InternalGuidanceDrawer } from "@/components/staff/internal-guidance-drawer";
 import { ReopenCaseCard } from "@/components/staff/reopen-case-card";
 import { StaffDocumentPack } from "@/components/staff/staff-document-pack";
@@ -22,15 +21,10 @@ import { RouteBadge } from "@/components/shared/route-badge";
 import { StatusChip } from "@/components/shared/status-chip";
 import { buttonVariants } from "@/components/ui/button";
 import { ROUTES } from "@/config/routes";
-import {
-  clientUploadProgress,
-  notifyMockStoreChanged,
-  subscribeMockStore,
-} from "@/lib/client-portal";
-import { useMockDataSource } from "@/lib/data-source";
+import { clientUploadProgress } from "@/lib/client-portal";
 import { useCaseQuery } from "@/lib/hooks/use-case-api";
-import { getCaseById } from "@/lib/mock-store";
 import { caseAwaitingStaffReview } from "@/lib/staff-review";
+import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function clientPortalUrl(token: string): string {
@@ -46,7 +40,6 @@ export function StaffCaseDetail({
   params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
-  const mockData = useMockDataSource();
   const [caseId, setCaseId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -54,34 +47,20 @@ export function StaffCaseDetail({
   }, [params]);
 
   const apiQuery = useCaseQuery(caseId);
-  const mockCase = useSyncExternalStore(
-    subscribeMockStore,
-    () => (caseId ? getCaseById(caseId) : undefined),
-    () => undefined,
-  );
-
-  const caseRecord = mockData ? mockCase : apiQuery.data;
+  const caseRecord = apiQuery.data;
 
   const refreshCase = useCallback(() => {
-    if (mockData) {
-      notifyMockStoreChanged();
-    } else {
-      void apiQuery.refetch();
-    }
-  }, [mockData, apiQuery]);
+    void apiQuery.refetch();
+  }, [apiQuery]);
 
   useEffect(() => {
     if (!caseId) {
       return;
     }
-    if (mockData && caseId && !mockCase) {
-      router.replace(ROUTES.staffCases);
-      return;
-    }
-    if (!mockData && apiQuery.isError) {
+    if (apiQuery.isError) {
       router.replace(ROUTES.staffCases);
     }
-  }, [caseId, mockCase, mockData, apiQuery.isError, router]);
+  }, [caseId, apiQuery.isError, router]);
 
   useEffect(() => {
     if (!caseId || !caseRecord) {
@@ -93,8 +72,17 @@ export function StaffCaseDetail({
   }, [caseId, caseRecord, router]);
 
   if (!caseRecord) {
-    if (!mockData && apiQuery.isLoading) {
-      return null;
+    if (apiQuery.isLoading) {
+      return (
+        <StaffAppShell activeNav="cases">
+          <div className="flex min-h-[40vh] items-center justify-center">
+            <Loader2
+              className="size-8 animate-spin text-primary"
+              aria-label="Loading case"
+            />
+          </div>
+        </StaffAppShell>
+      );
     }
     return null;
   }
@@ -195,13 +183,6 @@ export function StaffCaseDetail({
           caseRecord={caseRecord}
           onDeleted={() => router.replace(ROUTES.staffCases)}
         />
-
-        {mockData ? (
-          <DemoShortcutsCard
-            caseRecord={caseRecord}
-            onStoreChange={refreshCase}
-          />
-        ) : null}
       </div>
     </StaffAppShell>
   );

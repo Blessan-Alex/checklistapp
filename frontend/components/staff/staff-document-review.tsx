@@ -21,13 +21,7 @@ import {
 } from "@/components/ui/card";
 import { api } from "@/lib/api-client";
 import { clientUploadSlots } from "@/lib/client-portal";
-import { useMockDataSource } from "@/lib/data-source";
 import { mimeTypeFromFilename } from "@/lib/mime-from-filename";
-import {
-  approveClientSlotUpload,
-  completeStaffPackReview,
-  rejectClientSlotUpload,
-} from "@/lib/mock-store";
 import { isSlotRejected } from "@/lib/slot-status";
 import {
   allClientUploadsStaffApproved,
@@ -56,29 +50,15 @@ function slotReviewIcon(slot: Slot) {
 function DocumentPreview({
   caseRecord,
   slot,
-  mockData,
 }: {
   caseRecord: Case;
   slot: Slot;
-  mockData: boolean;
 }) {
   if (!slot.upload) {
     return (
       <p className="text-sm text-muted-foreground">
         Waiting for the client to upload this document.
       </p>
-    );
-  }
-
-  if (mockData) {
-    return (
-      <div className="flex min-h-[min(24rem,50vh)] flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 p-6 text-center">
-        <p className="text-sm font-medium text-foreground">{slot.upload.name}</p>
-        <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-          Document preview is available when the app runs against the API and
-          blob storage. Approve or reject using the actions below.
-        </p>
-      </div>
     );
   }
 
@@ -135,7 +115,6 @@ export function StaffDocumentReview({
   caseRecord: Case;
   onUpdated?: () => void;
 }) {
-  const mockData = useMockDataSource();
   const slots = useMemo(
     () => clientUploadSlots(caseRecord.slots),
     [caseRecord],
@@ -187,16 +166,8 @@ export function StaffDocumentReview({
     }
     try {
       await refreshAfter(async () => {
-        let updated: Case | undefined;
-        if (mockData) {
-          updated = approveClientSlotUpload(caseRecord.id, selected.id);
-          if (!updated) {
-            throw new Error("approve failed");
-          }
-        } else {
-          const res = await api.approveSlotUpload(caseRecord.id, selected.id);
-          updated = res.case;
-        }
+        const res = await api.approveSlotUpload(caseRecord.id, selected.id);
+        const updated = res.case;
         const nextId = updated
           ? firstPendingReviewSlotId(updated)
           : undefined;
@@ -215,19 +186,7 @@ export function StaffDocumentReview({
       return;
     }
     try {
-      if (mockData) {
-        const updated = rejectClientSlotUpload(
-          caseRecord.id,
-          rejectSlot.id,
-          message,
-        );
-        if (!updated) {
-          toast.error("Could not send to client");
-          return;
-        }
-      } else {
-        await api.rejectSlotUpload(caseRecord.id, rejectSlot.id, message);
-      }
+      await api.rejectSlotUpload(caseRecord.id, rejectSlot.id, message);
       toast.success("Client will see your message on this slot");
       onUpdated?.();
     } catch {
@@ -238,14 +197,7 @@ export function StaffDocumentReview({
   async function handleCompleteReview() {
     try {
       await refreshAfter(async () => {
-        if (mockData) {
-          const updated = completeStaffPackReview(caseRecord.id);
-          if (!updated) {
-            throw new Error("complete failed");
-          }
-        } else {
-          await api.completeStaffReview(caseRecord.id);
-        }
+        await api.completeStaffReview(caseRecord.id);
         toast.success("Pack ready — you can download the zip");
       });
     } catch {
@@ -268,7 +220,7 @@ export function StaffDocumentReview({
           Review client uploads
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          {!mockData && caseRecord.checklistFileName ? (
+          {caseRecord.checklistFileName ? (
             <a
               href={api.staffChecklistFileUrl(caseRecord.id)}
               target="_blank"
@@ -333,11 +285,7 @@ export function StaffDocumentReview({
                   </p>
                 ) : null}
               </div>
-              <DocumentPreview
-                caseRecord={caseRecord}
-                slot={selected}
-                mockData={mockData}
-              />
+              <DocumentPreview caseRecord={caseRecord} slot={selected} />
               <div className="sticky bottom-0 mt-4 flex flex-col gap-2 border-t border-border bg-card/95 pt-4 sm:flex-row sm:flex-wrap sm:items-center">
                 <Button
                   type="button"
@@ -362,7 +310,7 @@ export function StaffDocumentReview({
                 >
                   Ask for new file
                 </Button>
-                {!mockData && selected.upload ? (
+                {selected.upload ? (
                   <a
                     href={api.staffSlotFileUrl(caseRecord.id, selected.id)}
                     download={selected.upload.name}

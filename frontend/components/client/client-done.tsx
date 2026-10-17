@@ -6,7 +6,8 @@ import { useEffect } from "react";
 import { AppShellClient } from "@/components/shells/app-shell-client";
 import { ClientNotFound } from "@/components/client/client-not-found";
 import { ClientUnauthorized } from "@/components/client/client-unauthorized";
-import { buttonVariants } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { ROUTES } from "@/config/routes";
 import {
   clientUploadProgress,
@@ -18,7 +19,8 @@ import { cn } from "@/lib/utils";
 
 export function ClientDone({ token }: { token: string }) {
   const router = useRouter();
-  const { caseRecord, ready, notFound, unauthorized } = useClientCase(token);
+  const { caseRecord, ready, notFound, unauthorized, offline, refresh } =
+    useClientCase(token);
 
   const shouldRedirectToHub =
     ready &&
@@ -40,6 +42,27 @@ export function ClientDone({ token }: { token: string }) {
 
   if (unauthorized) {
     return <ClientUnauthorized />;
+  }
+
+  if (offline && !caseRecord) {
+    return (
+      <AppShellClient
+        applicantFirstName="…"
+        completed={0}
+        total={1}
+        homeHref={ROUTES.clientPortal(token)}
+      >
+        <Alert variant="destructive">
+          <AlertTitle>Connection problem</AlertTitle>
+          <AlertDescription className="space-y-3">
+            <p>We could not load your submission status. Try again.</p>
+            <Button type="button" variant="outline" className="min-h-11" onClick={refresh}>
+              Try again
+            </Button>
+          </AlertDescription>
+        </Alert>
+      </AppShellClient>
+    );
   }
 
   if (notFound || !caseRecord) {

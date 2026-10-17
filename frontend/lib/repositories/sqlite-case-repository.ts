@@ -1,10 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { getDb, persistCase, rowToCase } from "@/lib/db/database";
 import { buildCaseFromParsedChecklist } from "@/lib/case-from-parsed-checklist";
-import type { ParsedChecklist } from "@/lib/mock-parse";
+import type { ParsedChecklist } from "@/lib/checklist-parse";
 import type { Case } from "@/lib/types";
 import type { CaseRepository } from "./case-repository";
-import { LEGACY_CLIENT_TOKENS } from "./legacy-client-tokens";
 
 export class SqliteCaseRepository implements CaseRepository {
   async listCases(): Promise<Case[]> {
@@ -32,12 +31,6 @@ export class SqliteCaseRepository implements CaseRepository {
         "SELECT data_json, client_token FROM cases WHERE client_token = ? LIMIT 1",
       )
       .get(token) as { data_json: string; client_token: string | null } | undefined;
-    if (!row) {
-      const legacyId = LEGACY_CLIENT_TOKENS[token];
-      if (legacyId) {
-        return this.getCaseById(legacyId);
-      }
-    }
     return row ? rowToCase(row) : undefined;
   }
 

@@ -1,4 +1,4 @@
-# Firm branding (Prompt 4.1)
+# Firm branding
 
 Configure the client portal and staff UI without code changes.
 
@@ -28,15 +28,3 @@ Replace `app/icon.svg` (and optional `app/apple-icon.png`) with your mark. Next.
 ## Client instructions PDF
 
 On the client hub, **Save instructions (PDF)** opens a print-ready page. Use the browser **Print → Save as PDF** dialog.
-
-## Lighthouse (Prompt 4.1 VERIFY)
-
-On a production build, audit the demo client hub:
-
-```bash
-npm run build && npm run start
-# In another terminal:
-npx lighthouse http://localhost:3000/c/demo-dino --form-factor=mobile --screenEmulation.mobile --only-categories=performance,accessibility
-```
-
-Target **mobile performance ≥ 90** on `/c/demo-dino`. SSR uses seeded demo cases when `NEXT_PUBLIC_USE_MOCK_STORE` is unset/true.

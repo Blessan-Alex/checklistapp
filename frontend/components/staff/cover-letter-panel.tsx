@@ -12,7 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useMockDataSource } from "@/lib/data-source";
 import { useSaveCaseMutation } from "@/lib/hooks/use-case-api";
 import { buildCoverLetterDocxBlob } from "@/lib/cover-letter-docx";
 import {
@@ -22,7 +21,6 @@ import {
   routeCoverLetterLabel,
   type CoverLetterDraft,
 } from "@/lib/cover-letter";
-import { saveCaseRecord } from "@/lib/mock-store";
 import type { Case } from "@/lib/types";
 import { toast } from "sonner";
 
@@ -33,7 +31,6 @@ export function CoverLetterPanel({
   caseRecord: Case;
   onSaved?: () => void;
 }) {
-  const mockData = useMockDataSource();
   const saveMutation = useSaveCaseMutation();
   const [draft, setDraft] = useState<CoverLetterDraft>(() =>
     defaultCoverLetterDraft(caseRecord),
@@ -64,11 +61,6 @@ export function CoverLetterPanel({
       coverLetter: next,
       updatedAt: new Date().toISOString(),
     };
-    if (mockData) {
-      saveCaseRecord(payload);
-      onSaved?.();
-      return;
-    }
     await saveMutation.mutateAsync({
       id: caseRecord.id,
       patch: { coverLetter: next, updatedAt: payload.updatedAt },

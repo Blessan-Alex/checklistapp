@@ -38,5 +38,8 @@ export function getStaffPasswordHash(): string | undefined {
 }
 
 export function getSessionSecret(): string {
+  if (process.env.NODE_ENV === "production") {
+    return requireEnv("SESSION_SECRET");
+  }
   return requireEnv("SESSION_SECRET", "dev-session-secret-change-me");
 }

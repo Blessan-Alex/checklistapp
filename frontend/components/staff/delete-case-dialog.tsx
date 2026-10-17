@@ -13,9 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { ApiError } from "@/lib/api-client";
-import { useMockDataSource } from "@/lib/data-source";
 import { useDeleteCaseMutation } from "@/lib/hooks/use-case-api";
-import { deleteCaseRecord } from "@/lib/mock-store";
 import type { Case } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +28,6 @@ export function DeleteCaseDialog({
   onOpenChange: (open: boolean) => void;
   onDeleted: () => void;
 }) {
-  const mockData = useMockDataSource();
   const deleteMutation = useDeleteCaseMutation();
   const [confirmName, setConfirmName] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -57,18 +54,10 @@ export function DeleteCaseDialog({
     }
     setSubmitting(true);
     try {
-      if (mockData) {
-        const removed = deleteCaseRecord(caseRecord.id);
-        if (!removed) {
-          toast.error("Could not delete case");
-          return;
-        }
-      } else {
-        await deleteMutation.mutateAsync({
-          id: caseRecord.id,
-          confirmName: confirmName.trim(),
-        });
-      }
+      await deleteMutation.mutateAsync({
+        id: caseRecord.id,
+        confirmName: confirmName.trim(),
+      });
       toast.success("Case deleted permanently");
       handleOpenChange(false);
       onDeleted();

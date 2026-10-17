@@ -19,16 +19,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { api } from "@/lib/api-client";
-import { useMockDataSource } from "@/lib/data-source";
 import { formatBytes } from "@/lib/format-bytes";
 import {
   buildZipManifestText,
-  downloadZipManifestFile,
   getArchiveRootName,
   slotDocumentZipName,
 } from "@/lib/zip-manifest";
 import { OneDriveExportButton } from "@/components/staff/onedrive-export-button";
-import { markCaseZipReady } from "@/lib/mock-store";
 import { canStaffDownloadZip } from "@/lib/staff-review";
 import type { Case } from "@/lib/types";
 import { toast } from "sonner";
@@ -40,7 +37,6 @@ export function ZipDownloadCard({
   caseRecord: Case;
   onStoreChange?: () => void;
 }) {
-  const mockData = useMockDataSource();
   const [open, setOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const manifest = useMemo(
@@ -52,18 +48,6 @@ export function ZipDownloadCard({
   const canDownload = canStaffDownloadZip(caseRecord);
 
   async function handleDownload() {
-    if (mockData) {
-      downloadZipManifestFile(caseRecord);
-      markCaseZipReady(caseRecord.id);
-      onStoreChange?.();
-      const size = new Blob([manifest], { type: "text/plain" }).size;
-      toast.success("Manifest downloaded", {
-        description: `${formatBytes(size)} · Enable API mode for a real zip file.`,
-      });
-      setOpen(false);
-      return;
-    }
-
     setDownloading(true);
     try {
       const blob = await api.downloadCaseZip(caseRecord.id);
@@ -110,7 +94,6 @@ export function ZipDownloadCard({
           {!canDownload ? (
             <p className="mt-2 text-xs text-muted-foreground">
               Approve every client document and finish review to unlock the zip.
-              {mockData ? " Use Simulate client completed, then approve slots in Review." : ""}
             </p>
           ) : null}
         </CardContent>

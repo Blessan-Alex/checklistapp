@@ -13,8 +13,6 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api-client";
-import { useMockDataSource } from "@/lib/data-source";
-import { reopenCaseForClient } from "@/lib/mock-store";
 import type { Case } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +23,6 @@ export function ReopenCaseCard({
   caseRecord: Case;
   onUpdated?: () => void;
 }) {
-  const mockData = useMockDataSource();
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -46,15 +43,7 @@ export function ReopenCaseCard({
     }
     setSubmitting(true);
     try {
-      if (mockData) {
-        const updated = reopenCaseForClient(caseRecord.id, trimmed);
-        if (!updated) {
-          toast.error("Could not reopen case");
-          return;
-        }
-      } else {
-        await api.reopenCase(caseRecord.id, trimmed);
-      }
+      await api.reopenCase(caseRecord.id, trimmed);
       setNote("");
       toast.success("Client portal reopened");
       onUpdated?.();

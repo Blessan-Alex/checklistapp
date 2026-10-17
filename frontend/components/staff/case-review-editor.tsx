@@ -30,12 +30,10 @@ import {
 } from "@/lib/add-manual-slot";
 import { showPreviousPassportsSuggestion } from "@/lib/checklist-hints";
 import { rebuildCaseSlots } from "@/lib/case-slots";
-import { useMockDataSource } from "@/lib/data-source";
 import {
   usePublishCaseMutation,
   useSaveCaseMutation,
 } from "@/lib/hooks/use-case-api";
-import { publishCase, saveCaseRecord } from "@/lib/mock-store";
 import type { Case, Route } from "@/lib/types";
 import { countClientUploadSlots } from "@/lib/slot-builder";
 
@@ -46,7 +44,6 @@ export function CaseReviewEditor({
 }: {
   initialCase: Case;
 }) {
-  const mockData = useMockDataSource();
   const saveMutation = useSaveCaseMutation();
   const publishMutation = usePublishCaseMutation();
   const [draft, setDraft] = useState<Case>(initialCase);
@@ -99,12 +96,6 @@ export function CaseReviewEditor({
       status: "draft" as const,
       updatedAt: new Date().toISOString(),
     };
-    if (mockData) {
-      const saved = saveCaseRecord(payload);
-      setDraft(saved);
-      toast.success("Draft saved");
-      return;
-    }
     try {
       const saved = await saveMutation.mutateAsync({
         id: draft.id,
@@ -118,24 +109,6 @@ export function CaseReviewEditor({
   }
 
   async function handleConfirmPublish() {
-    if (mockData) {
-      saveCaseRecord({
-        ...draft,
-        status: "draft",
-        updatedAt: new Date().toISOString(),
-      });
-      const published = publishCase(draft.id);
-      if (!published?.clientToken) {
-        toast.error("Could not publish case");
-        return;
-      }
-      setDraft(published);
-      const url = `${window.location.origin}${ROUTES.clientPortal(published.clientToken)}`;
-      setPublishedUrl(url);
-      toast.success("Case published");
-      return;
-    }
-
     try {
       await saveMutation.mutateAsync({
         id: draft.id,

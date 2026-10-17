@@ -2,15 +2,12 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, api, queryKeys } from "@/lib/api-client";
-import { useMockDataSource } from "@/lib/data-source";
 import type { Case } from "@/lib/types";
 
 export function useCasesQuery() {
-  const mock = useMockDataSource();
   return useQuery({
     queryKey: queryKeys.cases,
     queryFn: async () => (await api.listCases()).cases,
-    enabled: !mock,
     retry: (failureCount, error) => {
       if (error instanceof ApiError && error.status === 401) {
         return false;
@@ -21,20 +18,18 @@ export function useCasesQuery() {
 }
 
 export function useCaseQuery(caseId: string | null) {
-  const mock = useMockDataSource();
   return useQuery({
     queryKey: queryKeys.case(caseId ?? ""),
     queryFn: async () => (await api.getCase(caseId!)).case,
-    enabled: !mock && Boolean(caseId),
+    enabled: Boolean(caseId),
   });
 }
 
 export function useClientCaseQuery(token: string) {
-  const mock = useMockDataSource();
   return useQuery({
     queryKey: queryKeys.clientCase(token),
     queryFn: async () => (await api.getClientCase(token)).case,
-    enabled: !mock && Boolean(token),
+    enabled: Boolean(token),
     refetchOnWindowFocus: true,
     retry: (failureCount, error) => {
       if (error instanceof ApiError && (error.status === 404 || error.status === 401)) {

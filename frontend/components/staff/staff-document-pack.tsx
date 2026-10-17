@@ -5,8 +5,6 @@ import { toast } from "sonner";
 import { RejectSlotDialog } from "@/components/staff/reject-slot-dialog";
 import { SlotTable } from "@/components/staff/slot-table";
 import { api } from "@/lib/api-client";
-import { useMockDataSource } from "@/lib/data-source";
-import { rejectClientSlotUpload } from "@/lib/mock-store";
 import type { Case, Slot } from "@/lib/types";
 
 export function StaffDocumentPack({
@@ -16,7 +14,6 @@ export function StaffDocumentPack({
   caseRecord: Case;
   onUpdated?: () => void;
 }) {
-  const mockData = useMockDataSource();
   const [rejectSlot, setRejectSlot] = useState<Slot | null>(null);
   const [rejectOpen, setRejectOpen] = useState(false);
 
@@ -30,19 +27,7 @@ export function StaffDocumentPack({
       return;
     }
     try {
-      if (mockData) {
-        const updated = rejectClientSlotUpload(
-          caseRecord.id,
-          rejectSlot.id,
-          message,
-        );
-        if (!updated) {
-          toast.error("Could not reject upload");
-          return;
-        }
-      } else {
-        await api.rejectSlotUpload(caseRecord.id, rejectSlot.id, message);
-      }
+      await api.rejectSlotUpload(caseRecord.id, rejectSlot.id, message);
       toast.success("Client notified on this slot");
       onUpdated?.();
     } catch {

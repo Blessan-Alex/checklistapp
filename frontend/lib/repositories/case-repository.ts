@@ -1,4 +1,4 @@
-import type { ParsedChecklist } from "@/lib/mock-parse";
+import type { ParsedChecklist } from "@/lib/checklist-parse";
 import type { Case } from "@/lib/types";
 
 /** Server persistence boundary (SQLite local, Firestore on Vercel). */

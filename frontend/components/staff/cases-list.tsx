@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { RouteBadge } from "@/components/shared/route-badge";
@@ -20,13 +20,10 @@ import {
 } from "@/components/ui/table";
 import { ROUTES } from "@/config/routes";
 import type { Case, CaseStatus, Route } from "@/lib/types";
-import { subscribeMockStore } from "@/lib/client-portal";
-import { useMockDataSource } from "@/lib/data-source";
 import { ApiError } from "@/lib/api-client";
 import { useCasesQuery } from "@/lib/hooks/use-case-api";
 import { clearStaffAuth } from "@/lib/staff-auth";
 import { clientUploadProgress } from "@/lib/client-portal";
-import { getCases } from "@/lib/mock-store";
 import { staffCaseHref } from "@/lib/staff-routes";
 import { cn } from "@/lib/utils";
 
@@ -44,10 +41,6 @@ function formatUpdated(iso?: string): string {
   }).format(new Date(iso));
 }
 
-function readCases(): Case[] {
-  return getCases();
-}
-
 const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "All statuses" },
   { value: "draft", label: "Draft" },
@@ -60,13 +53,7 @@ const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
 
 export function CasesList() {
   const router = useRouter();
-  const mockData = useMockDataSource();
   const apiQuery = useCasesQuery();
-  const mockCases = useSyncExternalStore(
-    subscribeMockStore,
-    readCases,
-    readCases,
-  );
 
   const [routeFilter, setRouteFilter] = useState<RouteFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -74,10 +61,7 @@ export function CasesList() {
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Case | null>(null);
 
-  const cases = useMemo(
-    () => (mockData ? mockCases : (apiQuery.data ?? [])),
-    [mockData, mockCases, apiQuery.data],
-  );
+  const cases = useMemo(() => apiQuery.data ?? [], [apiQuery.data]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -116,9 +100,7 @@ export function CasesList() {
   }
 
   const sessionExpired =
-    !mockData &&
-    apiQuery.error instanceof ApiError &&
-    apiQuery.error.status === 401;
+    apiQuery.error instanceof ApiError && apiQuery.error.status === 401;
 
   useEffect(() => {
     if (!sessionExpired) {
@@ -132,11 +114,30 @@ export function CasesList() {
     return null;
   }
 
-  if (!mockData && apiQuery.isLoading) {
+  if (apiQuery.isLoading) {
     return (
       <p className="text-muted-foreground" role="status">
         Loading cases…
       </p>
+    );
+  }
+
+  if (apiQuery.isError) {
+    return (
+      <div className="mx-auto max-w-md space-y-4 py-12 text-center">
+        <h1 className="text-2xl font-semibold text-primary">Cases</h1>
+        <p className="text-sm text-muted-foreground">
+          Could not load cases. Check your connection or server configuration,
+          then try again.
+        </p>
+        <Button
+          type="button"
+          className="min-h-11"
+          onClick={() => void apiQuery.refetch()}
+        >
+          Retry
+        </Button>
+      </div>
     );
   }
 

@@ -1,7 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import Database from "better-sqlite3";
-import { createDinoCase, createSophyCase } from "@/lib/mock-case-factory";
 import type { Case } from "@/lib/types";
 import { getDatabasePath } from "@/lib/server/env";
 
@@ -19,27 +18,6 @@ function migrate(database: Database.Database): void {
   `);
 }
 
-function seedIfEmpty(database: Database.Database): void {
-  const row = database.prepare("SELECT COUNT(*) as c FROM cases").get() as {
-    c: number;
-  };
-  if (row.c > 0) {
-    return;
-  }
-  const insert = database.prepare(`
-    INSERT INTO cases (id, data_json, client_token, updated_at)
-    VALUES (@id, @data_json, @client_token, @updated_at)
-  `);
-  for (const seed of [createDinoCase(), createSophyCase()]) {
-    insert.run({
-      id: seed.id,
-      data_json: JSON.stringify(seed),
-      client_token: seed.clientToken ?? null,
-      updated_at: seed.updatedAt ?? new Date().toISOString(),
-    });
-  }
-}
-
 export function getDb(): Database.Database {
   if (db) {
     return db;
@@ -49,7 +27,6 @@ export function getDb(): Database.Database {
   db = new Database(path);
   db.pragma("journal_mode = WAL");
   migrate(db);
-  seedIfEmpty(db);
   return db;
 }
 

@@ -117,9 +117,3 @@ export interface ClientToken {
   token: string;
   expiresAt?: string;
 }
-
-/** Persisted demo state (localStorage). */
-export interface MockStoreState {
-  cases: Case[];
-  version: 1;
-}

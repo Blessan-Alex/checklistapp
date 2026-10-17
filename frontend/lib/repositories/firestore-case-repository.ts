@@ -1,12 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { buildCaseFromParsedChecklist } from "@/lib/case-from-parsed-checklist";
-import { createDinoCase, createSophyCase } from "@/lib/mock-case-factory";
-import type { ParsedChecklist } from "@/lib/mock-parse";
+import type { ParsedChecklist } from "@/lib/checklist-parse";
 import { getFirebaseFirestore } from "@/lib/server/firebase-admin";
 import { stripUndefined } from "@/lib/server/firestore-sanitize";
 import type { Case } from "@/lib/types";
 import type { CaseRepository } from "./case-repository";
-import { LEGACY_CLIENT_TOKENS } from "./legacy-client-tokens";
 
 const COLLECTION = "portal_cases";
 
@@ -33,30 +31,8 @@ function docToCase(data: CaseDoc): Case {
   return caseRecord;
 }
 
-async function seedIfEmpty(): Promise<void> {
-  if (process.env.DEMO_SEED_CASES?.trim().toLowerCase() !== "true") {
-    return;
-  }
-  const db = getFirebaseFirestore();
-  const snap = await db.collection(COLLECTION).limit(1).get();
-  if (!snap.empty) {
-    return;
-  }
-  const batch = db.batch();
-  const now = new Date().toISOString();
-  for (const seed of [createDinoCase(), createSophyCase()]) {
-    const ref = db.collection(COLLECTION).doc(seed.id);
-    batch.set(
-      ref,
-      toFirestoreDoc(seed, seed.updatedAt ?? now),
-    );
-  }
-  await batch.commit();
-}
-
 export class FirestoreCaseRepository implements CaseRepository {
   async listCases(): Promise<Case[]> {
-    await seedIfEmpty();
     const db = getFirebaseFirestore();
     const snap = await db
       .collection(COLLECTION)
@@ -83,10 +59,6 @@ export class FirestoreCaseRepository implements CaseRepository {
       .get();
     if (!snap.empty) {
       return docToCase(snap.docs[0].data() as CaseDoc);
-    }
-    const legacyId = LEGACY_CLIENT_TOKENS[token];
-    if (legacyId) {
-      return this.getCaseById(legacyId);
     }
     return undefined;
   }

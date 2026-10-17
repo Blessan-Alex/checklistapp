@@ -32,8 +32,8 @@ export function verifyStaffSessionCookie(value: string | undefined): boolean {
 
 export async function validateStaffPassword(password: string): Promise<boolean> {
   const hash = getStaffPasswordHash();
-  if (!hash) {
-    return true;
+  if (!hash || !password) {
+    return false;
   }
   return compare(password, hash);
 }

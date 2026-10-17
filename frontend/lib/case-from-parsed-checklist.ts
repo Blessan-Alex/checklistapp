@@ -1,5 +1,5 @@
 import { rebuildCaseSlots } from "@/lib/case-slots";
-import type { ParsedChecklist } from "@/lib/mock-parse";
+import type { ParsedChecklist } from "@/lib/checklist-parse";
 import { getArchiveRootName } from "@/lib/zip-manifest";
 import type { Case, Route } from "@/lib/types";
 

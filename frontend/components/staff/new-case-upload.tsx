@@ -5,24 +5,13 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { UploadDropzone } from "@/components/shared/upload-dropzone";
 import { ROUTES } from "@/config/routes";
-import {
-  MAX_STAFF_CHECKLIST_BYTES,
-  MOCK_PARSE_DELAY_MS,
-} from "@/lib/constants";
-import { useMockDataSource } from "@/lib/data-source";
+import { MAX_STAFF_CHECKLIST_BYTES } from "@/lib/constants";
 import { ApiError } from "@/lib/api-client";
 import { useCreateCaseMutation } from "@/lib/hooks/use-case-api";
-import {
-  ChecklistParseError,
-  UnsupportedChecklistError,
-} from "@/lib/checklist-parse-errors";
-import { parseChecklistFileName } from "@/lib/mock-parse";
-import { upsertCaseFromParsedChecklist } from "@/lib/mock-store";
 import { toast } from "sonner";
 
 export function NewCaseUpload() {
   const router = useRouter();
-  const mockData = useMockDataSource();
   const createCase = useCreateCaseMutation();
   const [parsing, setParsing] = useState(false);
 
@@ -32,49 +21,21 @@ export function NewCaseUpload() {
     }
     setParsing(true);
 
-    if (!mockData) {
-      void createCase
-        .mutateAsync(file)
-        .then((result) => {
-          router.push(ROUTES.staffCaseReview(result.case.id));
-        })
-        .catch((error: unknown) => {
-          if (error instanceof ApiError) {
-            toast.error(error.message);
-            return;
-          }
-          const message =
-            error instanceof Error ? error.message : "Could not create case";
-          toast.error(message);
-        })
-        .finally(() => setParsing(false));
-      return;
-    }
-
-    let parsed;
-    try {
-      parsed = parseChecklistFileName(file.name);
-    } catch (error: unknown) {
-      setParsing(false);
-      const message =
-        error instanceof ChecklistParseError ||
-        error instanceof UnsupportedChecklistError
-          ? error.message
-          : "Could not read checklist";
-      toast.error(message);
-      return;
-    }
-
-    window.setTimeout(() => {
-      const updatedAtIso = new Date().toISOString();
-      const caseRecord = upsertCaseFromParsedChecklist(
-        file.name,
-        parsed,
-        updatedAtIso,
-      );
-      setParsing(false);
-      router.push(ROUTES.staffCaseReview(caseRecord.id));
-    }, MOCK_PARSE_DELAY_MS);
+    void createCase
+      .mutateAsync(file)
+      .then((result) => {
+        router.push(ROUTES.staffCaseReview(result.case.id));
+      })
+      .catch((error: unknown) => {
+        if (error instanceof ApiError) {
+          toast.error(error.message);
+          return;
+        }
+        const message =
+          error instanceof Error ? error.message : "Could not create case";
+        toast.error(message);
+      })
+      .finally(() => setParsing(false));
   }
 
   return (

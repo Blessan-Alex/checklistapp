@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FirmLogo } from "@/components/shared/firm-logo";
 import { cn } from "@/lib/utils";
@@ -11,13 +10,11 @@ export function AppShellStaff({
   children,
   activeNav,
   onLogout,
-  demoToolbar,
   className,
 }: {
   children: React.ReactNode;
   activeNav?: "cases" | "new";
   onLogout?: () => void;
-  demoToolbar?: React.ReactNode;
   className?: string;
 }) {
   return (
@@ -52,15 +49,6 @@ export function AppShellStaff({
             </Link>
           </nav>
           <div className="flex min-w-0 shrink-0 items-center gap-1 sm:gap-2">
-            {demoToolbar}
-            {!demoToolbar ? (
-              <Badge
-                variant="outline"
-                className="hidden border-[var(--brand-golden-ochre)] bg-[color-mix(in_srgb,var(--brand-golden-ochre)_15%,var(--brand-warm-ivory))] text-[var(--brand-dark-indigo)] sm:inline-flex"
-              >
-                Demo
-              </Badge>
-            ) : null}
             <Button
               type="button"
               variant="ghost"

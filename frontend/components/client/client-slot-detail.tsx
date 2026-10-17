@@ -26,12 +26,7 @@ import {
 } from "@/lib/client-slot-upload";
 import { validateClientUploadSize } from "@/lib/client-upload-validation";
 import { mimeTypeFromFilename } from "@/lib/mime-from-filename";
-import { useMockDataSource } from "@/lib/data-source";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  markClientInProgress,
-  setSlotUpload,
-} from "@/lib/mock-store";
 import { useClientCase } from "@/lib/use-client-case";
 import { HO_CONSENT_BLANK_PDF } from "@/lib/add-manual-slot";
 import type { Slot } from "@/lib/types";
@@ -102,7 +97,6 @@ export function ClientSlotDetail({
   slotId: string;
 }) {
   const router = useRouter();
-  const mockData = useMockDataSource();
   const queryClient = useQueryClient();
   const { caseRecord, ready, refresh, offline, notFound, unauthorized } =
     useClientCase(token);
@@ -155,6 +149,27 @@ export function ClientSlotDetail({
     return <ClientUnauthorized />;
   }
 
+  if (offline && !caseRecord) {
+    return (
+      <AppShellClient
+        applicantFirstName="…"
+        completed={0}
+        total={1}
+        homeHref={ROUTES.clientPortal(token)}
+      >
+        <Alert variant="destructive">
+          <AlertTitle>Connection problem</AlertTitle>
+          <AlertDescription className="space-y-3">
+            <p>We could not load this document slot. Check your connection.</p>
+            <Button type="button" variant="outline" className="min-h-11" onClick={refresh}>
+              Try again
+            </Button>
+          </AlertDescription>
+        </Alert>
+      </AppShellClient>
+    );
+  }
+
   if (notFound || !caseRecord) {
     return <ClientNotFound />;
   }
@@ -168,21 +183,6 @@ export function ClientSlotDetail({
   function handleDownloadConsent() {
     const url = slot?.downloadUrl ?? HO_CONSENT_BLANK_PDF;
     window.open(url, "_blank", "noopener,noreferrer");
-  }
-
-  function persistMockUpload(file: File) {
-    if (!caseRecord || !slot) {
-      return;
-    }
-    markClientInProgress(caseRecord.id);
-    setSlotUpload(caseRecord.id, slot.id, {
-      name: file.name,
-      size: file.size,
-      uploadedAt: new Date().toISOString(),
-    });
-    setSavedFlash(true);
-    refresh();
-    window.setTimeout(() => setSavedFlash(false), 2500);
   }
 
   function startApiUpload(file: File) {
@@ -272,11 +272,6 @@ export function ClientSlotDetail({
       return;
     }
 
-    if (mockData) {
-      persistMockUpload(file);
-      return;
-    }
-
     startApiUpload(file);
   }
 
@@ -285,11 +280,7 @@ export function ClientSlotDetail({
       setReplaceOpen(false);
       return;
     }
-    if (mockData) {
-      persistMockUpload(pendingFile);
-    } else {
-      startApiUpload(pendingFile);
-    }
+    startApiUpload(pendingFile);
     setPendingFile(null);
     setReplaceOpen(false);
   }
@@ -361,7 +352,7 @@ export function ClientSlotDetail({
           />
         ) : null}
 
-        {locked && slot.upload && !mockData ? (
+        {locked && slot.upload ? (
           <div className="space-y-2">
             <p className="text-sm font-medium text-foreground">Your upload</p>
             {mimeTypeFromFilename(slot.upload.name) === "application/pdf" ? (

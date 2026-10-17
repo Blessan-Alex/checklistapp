@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { AppShellClient } from "@/components/shells/app-shell-client";
 import { ClientNotFound } from "@/components/client/client-not-found";
 import { ClientUnauthorized } from "@/components/client/client-unauthorized";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ROUTES } from "@/config/routes";
@@ -15,18 +16,16 @@ import {
   isClientPortalLocked,
 } from "@/lib/client-portal";
 import { ApiError } from "@/lib/api-client";
-import { useMockDataSource } from "@/lib/data-source";
 import { useClientSubmitMutation } from "@/lib/hooks/use-case-api";
-import { submitClientCase } from "@/lib/mock-store";
 import { useClientCase } from "@/lib/use-client-case";
 import { toast } from "sonner";
 import { CheckCircle2, Circle } from "lucide-react";
 
 export function ClientFinish({ token }: { token: string }) {
   const router = useRouter();
-  const mockData = useMockDataSource();
   const submitMutation = useClientSubmitMutation(token);
-  const { caseRecord, ready, notFound, unauthorized } = useClientCase(token);
+  const { caseRecord, ready, notFound, unauthorized, offline, refresh } =
+    useClientCase(token);
   const [confirmed, setConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -50,6 +49,30 @@ export function ClientFinish({ token }: { token: string }) {
     return <ClientUnauthorized />;
   }
 
+  if (offline && !caseRecord) {
+    return (
+      <AppShellClient
+        applicantFirstName="…"
+        completed={0}
+        total={1}
+        homeHref={ROUTES.clientPortal(token)}
+      >
+        <Alert variant="destructive">
+          <AlertTitle>Connection problem</AlertTitle>
+          <AlertDescription className="space-y-3">
+            <p>
+              We could not load your checklist. Check your connection and try
+              again.
+            </p>
+            <Button type="button" variant="outline" className="min-h-11" onClick={refresh}>
+              Try again
+            </Button>
+          </AlertDescription>
+        </Alert>
+      </AppShellClient>
+    );
+  }
+
   if (notFound || !caseRecord) {
     return <ClientNotFound />;
   }
@@ -64,11 +87,6 @@ export function ClientFinish({ token }: { token: string }) {
 
   function handleSubmit() {
     if (!complete || !confirmed || !caseRecord || submitting) {
-      return;
-    }
-    if (mockData) {
-      submitClientCase(caseRecord.id);
-      router.push(ROUTES.clientDone(token));
       return;
     }
     setSubmitting(true);

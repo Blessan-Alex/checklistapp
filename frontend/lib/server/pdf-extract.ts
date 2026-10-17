@@ -1,6 +1,6 @@
 import pdfParse from "pdf-parse";
 import type { Case } from "@/lib/types";
-import type { ParsedChecklist } from "@/lib/mock-parse";
+import type { ParsedChecklist } from "@/lib/checklist-parse";
 import { caseIdFromUan } from "@/lib/case-from-parsed-checklist";
 import { classifyChecklistRoute } from "@/lib/checklist-route";
 import { ChecklistParseError } from "@/lib/checklist-parse-errors";
