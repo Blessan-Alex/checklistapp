@@ -17,7 +17,16 @@ import {
 } from "@/lib/client-portal";
 import { isSlotRejected } from "@/lib/slot-status";
 import { useClientCase } from "@/lib/use-client-case";
+import type { Slot } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
+function sortHubSlots(slots: Slot[]): Slot[] {
+  const adviser = slots.filter((s) => !s.clientUpload);
+  const client = slots.filter((s) => s.clientUpload);
+  const rejected = client.filter((s) => isSlotRejected(s));
+  const rest = client.filter((s) => !isSlotRejected(s));
+  return [...rejected, ...rest, ...adviser];
+}
 
 export function ClientHub({
   token,
@@ -71,14 +80,15 @@ export function ClientHub({
             <AlertTitle>Offline</AlertTitle>
             <AlertDescription>
               We could not load your checklist from the server. Check your
-              connection and refresh the page.
+              connection and refresh the page. When you are back online, open
+              each document to upload or retry.
             </AlertDescription>
           </Alert>
         ) : null}
         {locked ? (
           <p className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-foreground">
-            Thank you — your documents have been submitted. Your adviser will
-            review them shortly.
+            We&apos;re reviewing your documents. You&apos;ll hear from your
+            adviser if anything needs to change.
           </p>
         ) : null}
 
@@ -86,13 +96,13 @@ export function ClientHub({
           <Alert
             className="border-[var(--brand-golden-ochre)]/60 bg-[color-mix(in_srgb,var(--brand-golden-ochre)_12%,var(--brand-warm-ivory))]"
           >
-            <AlertTitle>Action needed</AlertTitle>
+            <AlertTitle>Please replace highlighted items</AlertTitle>
             <AlertDescription>
-              Your adviser has asked you to replace{" "}
+              Your adviser needs{" "}
               {replacementSlots.length === 1
-                ? "one document"
-                : `${replacementSlots.length} documents`}
-              . Open the highlighted items below and upload new files.
+                ? "one new version"
+                : `${replacementSlots.length} new versions`}
+              . Start with the items at the top of the list.
             </AlertDescription>
           </Alert>
         ) : null}
@@ -111,7 +121,7 @@ export function ClientHub({
             ) : null}
           </div>
           <ul className="space-y-3">
-            {caseRecord.slots.map((slot) => {
+            {sortHubSlots(caseRecord.slots).map((slot) => {
               if (!slot.clientUpload) {
                 return (
                   <li key={slot.id}>

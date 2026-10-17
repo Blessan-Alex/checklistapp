@@ -2,7 +2,11 @@
 
 import { useCallback, useRef, useState } from "react";
 import { CloudUpload, FileWarning, Loader2 } from "lucide-react";
-import { MAX_CLIENT_FILE_BYTES, MAX_CLIENT_FILE_MB } from "@/lib/constants";
+import {
+  EFFECTIVE_CLIENT_FILE_MB,
+  getEffectiveClientUploadMaxBytes,
+} from "@/lib/constants";
+import { validateClientUploadSize } from "@/lib/client-upload-validation";
 import { cn } from "@/lib/utils";
 import {
   Progress,
@@ -11,7 +15,7 @@ import {
   ProgressValue,
 } from "@/components/ui/progress";
 
-const DEFAULT_ACCEPT = ".pdf,.jpg,.jpeg,.png";
+const DEFAULT_ACCEPT = "*/*";
 
 export interface UploadDropzoneProps {
   onFileSelect?: (file: File) => void;
@@ -27,8 +31,8 @@ export interface UploadDropzoneProps {
 export function UploadDropzone({
   onFileSelect,
   accept = DEFAULT_ACCEPT,
-  maxBytes = MAX_CLIENT_FILE_BYTES,
-  hint = `PDF, JPG, or PNG · max ${MAX_CLIENT_FILE_MB} MB per file`,
+  maxBytes = getEffectiveClientUploadMaxBytes(),
+  hint = `Max ${EFFECTIVE_CLIENT_FILE_MB} MB per file`,
   className,
   disabled = false,
   uploading = false,
@@ -42,16 +46,11 @@ export function UploadDropzone({
   const validate = useCallback(
     (file: File): string | null => {
       if (file.size > maxBytes) {
-        return `File is too large (max ${Math.round(maxBytes / (1024 * 1024))} MB).`;
-      }
-      const ext = `.${file.name.split(".").pop()?.toLowerCase() ?? ""}`;
-      const allowed = accept.split(",").map((a) => a.trim().toLowerCase());
-      if (!allowed.includes(ext)) {
-        return `File type not allowed. Accepted: ${accept}`;
+        return validateClientUploadSize(file);
       }
       return null;
     },
-    [accept, maxBytes],
+    [maxBytes],
   );
 
   const handleFile = useCallback(

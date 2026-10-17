@@ -21,6 +21,7 @@ const ALL_STATUSES: CaseStatus[] = [
   "live",
   "client_in_progress",
   "submitted",
+  "ready_to_zip",
   "zip_ready",
 ];
 

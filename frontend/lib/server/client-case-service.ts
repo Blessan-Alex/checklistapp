@@ -1,8 +1,10 @@
+import { clientUploadSizeError } from "@/lib/client-upload-validation";
 import { MAX_CLIENT_FILE_BYTES } from "@/lib/constants";
 import { allClientUploadsComplete, isClientPortalLocked } from "@/lib/client-portal";
 import { getCaseBlobStorage } from "@/lib/server/case-blob-storage";
 import { getServerCaseRepository } from "@/lib/server/case-repository-server";
 import { validateClientUploadBuffer } from "@/lib/server/client-upload-validation";
+import { slotUploadBlobPathname } from "@/lib/slot-upload-pathname";
 import type { Case } from "@/lib/types";
 
 export class ClientCaseError extends Error {
@@ -14,7 +16,7 @@ export class ClientCaseError extends Error {
   }
 }
 
-async function getWritableClientCase(token: string): Promise<Case> {
+export async function getWritableClientCase(token: string): Promise<Case> {
   const repo = getServerCaseRepository();
   const caseRecord = await repo.getCaseByClientToken(token);
   if (!caseRecord || caseRecord.status === "draft") {
@@ -35,12 +37,20 @@ export async function getClientCaseForPortal(token: string): Promise<Case> {
   return caseRecord;
 }
 
-export async function saveClientSlotUpload(
+export function expectedSlotUploadPathname(
+  caseRecord: Case,
+  slotId: string,
+  originalName: string,
+): string {
+  return slotUploadBlobPathname(caseRecord.id, slotId, originalName);
+}
+
+export async function attachClientSlotUploadMetadata(
   token: string,
   slotId: string,
-  buffer: Buffer,
   originalName: string,
-  mimeType: string,
+  sizeBytes: number,
+  uploadedAt?: string,
 ): Promise<Case> {
   const repo = getServerCaseRepository();
   const caseRecord = await getWritableClientCase(token);
@@ -49,35 +59,22 @@ export async function saveClientSlotUpload(
     throw new ClientCaseError("Invalid slot", 404);
   }
 
-  const validationError = validateClientUploadBuffer(
-    buffer,
-    originalName,
-    mimeType,
-    slot,
-  );
-  if (validationError) {
-    const status =
-      buffer.length > MAX_CLIENT_FILE_BYTES ? 413 : 400;
-    throw new ClientCaseError(validationError, status);
+  const sizeError = clientUploadSizeError(sizeBytes);
+  if (sizeError) {
+    throw new ClientCaseError(sizeError, 413);
   }
 
-  await getCaseBlobStorage().writeSlotUpload(
-    caseRecord.id,
-    slotId,
-    originalName,
-    buffer,
-  );
-
-  const uploadedAt = new Date().toISOString();
+  const at = uploadedAt ?? new Date().toISOString();
   const slots = caseRecord.slots.map((s) =>
     s.id === slotId
       ? {
           ...s,
           rejection: undefined,
+          staffApproval: undefined,
           upload: {
             name: originalName,
-            size: buffer.length,
-            uploadedAt,
+            size: sizeBytes,
+            uploadedAt: at,
           },
         }
       : s,
@@ -92,8 +89,75 @@ export async function saveClientSlotUpload(
     ...caseRecord,
     status,
     slots,
-    updatedAt: uploadedAt,
+    updatedAt: at,
   });
+}
+
+export async function saveClientSlotUpload(
+  token: string,
+  slotId: string,
+  buffer: Buffer,
+  originalName: string,
+  mimeType: string,
+): Promise<Case> {
+  const caseRecord = await getWritableClientCase(token);
+  const slot = caseRecord.slots.find((s) => s.id === slotId);
+  if (!slot || !slot.clientUpload) {
+    throw new ClientCaseError("Invalid slot", 404);
+  }
+
+  const validationError = validateClientUploadBuffer(
+    buffer,
+    originalName,
+    mimeType,
+  );
+  if (validationError) {
+    const status =
+      buffer.length > MAX_CLIENT_FILE_BYTES ? 413 : 400;
+    throw new ClientCaseError(validationError, status);
+  }
+
+  await getCaseBlobStorage().writeSlotUpload(
+    caseRecord.id,
+    slotId,
+    originalName,
+    buffer,
+  );
+
+  return attachClientSlotUploadMetadata(
+    token,
+    slotId,
+    originalName,
+    buffer.length,
+  );
+}
+
+/** After a direct Blob upload, persist metadata only if bytes exist in storage. */
+export async function confirmClientSlotUploadAfterStorage(
+  token: string,
+  slotId: string,
+  originalName: string,
+  uploadedAt?: string,
+): Promise<Case> {
+  const caseRecord = await getWritableClientCase(token);
+  const buffer = await getCaseBlobStorage().readSlotUpload(
+    caseRecord.id,
+    slotId,
+    originalName,
+  );
+  if (!buffer || buffer.length === 0) {
+    throw new ClientCaseError(
+      "We could not find your file yet. Wait a moment and tap Retry upload.",
+      400,
+    );
+  }
+  return attachClientSlotUploadMetadata(
+    token,
+    slotId,
+    originalName,
+    buffer.length,
+    uploadedAt,
+  );
 }
 
 export async function submitClientCaseByToken(token: string): Promise<Case> {

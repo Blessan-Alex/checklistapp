@@ -188,7 +188,7 @@ No S3/Azure/email v1. Optional: Railway/Fly + persistent volume.
 | Target | Rule |
 |--------|------|
 | Staff checklist upload | PDF only; max ~**15 MB** |
-| Client upload | ≤ **7 MB**; `.pdf`, `.jpg`, `.jpeg`, `.png` (`.doc`/`.docx` if CoS pending) |
+| Client upload | ≤ **7 MB** per file (size only; any file type) |
 | Soft checks | Warnings on e-Visa / Share Code (§6.3); staff/client can still proceed in MVP |
 | Finish | One file per slot (CoS pending: text file allowed per firm rule) |
 | After Finish | **Client locked**; staff downloads zip; **reopen client** = v2 |

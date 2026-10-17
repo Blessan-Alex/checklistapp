@@ -16,6 +16,7 @@ export type CaseStatus =
   | "live"
   | "client_in_progress"
   | "submitted"
+  | "ready_to_zip"
   | "zip_ready";
 
 export type SlotSource = "home_office" | "firm" | "manual";
@@ -79,6 +80,10 @@ export interface SlotRejection {
   rejectedAt: string;
 }
 
+export interface SlotStaffApproval {
+  approvedAt: string;
+}
+
 export interface Slot {
   id: string;
   sortNumber: number;
@@ -95,6 +100,8 @@ export interface Slot {
   upload?: { name: string; size: number; uploadedAt: string };
   /** Staff asked the client to replace this upload. */
   rejection?: SlotRejection;
+  /** Staff approved this upload during pack review. */
+  staffApproval?: SlotStaffApproval;
 }
 
 export interface Upload {

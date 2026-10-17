@@ -8,8 +8,8 @@ import { DemoShortcutsCard } from "@/components/staff/demo-shortcuts-card";
 import { InternalGuidanceDrawer } from "@/components/staff/internal-guidance-drawer";
 import { ReopenCaseCard } from "@/components/staff/reopen-case-card";
 import { StaffDocumentPack } from "@/components/staff/staff-document-pack";
+import { StaffDocumentReview } from "@/components/staff/staff-document-review";
 import { CoverLetterPanel } from "@/components/staff/cover-letter-panel";
-import { ZipDownloadCard } from "@/components/staff/zip-download-card";
 import {
   Tabs,
   TabsContent,
@@ -29,6 +29,7 @@ import {
 import { useMockDataSource } from "@/lib/data-source";
 import { useCaseQuery } from "@/lib/hooks/use-case-api";
 import { getCaseById } from "@/lib/mock-store";
+import { caseAwaitingStaffReview } from "@/lib/staff-review";
 import { cn } from "@/lib/utils";
 
 function clientPortalUrl(token: string): string {
@@ -102,6 +103,9 @@ export function StaffCaseDetail({
   }
 
   const progress = clientUploadProgress(caseRecord);
+  const defaultTab = caseAwaitingStaffReview(caseRecord)
+    ? "review"
+    : "documents";
 
   return (
     <StaffAppShell activeNav="cases">
@@ -151,8 +155,11 @@ export function StaffCaseDetail({
 
         <ReopenCaseCard caseRecord={caseRecord} onUpdated={refreshCase} />
 
-        <Tabs defaultValue="documents" className="w-full">
-          <TabsList className="grid h-auto w-full max-w-full grid-cols-2 gap-1 bg-muted/50 p-1 sm:max-w-md">
+        <Tabs defaultValue={defaultTab} className="w-full">
+          <TabsList className="grid h-auto w-full max-w-full grid-cols-3 gap-1 bg-muted/50 p-1 sm:max-w-xl">
+            <TabsTrigger value="review" className="min-h-11 px-2">
+              Review
+            </TabsTrigger>
             <TabsTrigger value="documents" className="min-h-11 px-2">
               Documents
             </TabsTrigger>
@@ -163,19 +170,17 @@ export function StaffCaseDetail({
               Cover letter
             </TabsTrigger>
           </TabsList>
+          <TabsContent value="review" className="mt-6 min-w-0">
+            <StaffDocumentReview
+              caseRecord={caseRecord}
+              onUpdated={refreshCase}
+            />
+          </TabsContent>
           <TabsContent value="documents" className="mt-6 min-w-0">
-            <div className="grid min-w-0 gap-6 xl:grid-cols-[1fr_minmax(16rem,20rem)] xl:items-start">
-              <section className="space-y-3">
-                <StaffDocumentPack
-                  caseRecord={caseRecord}
-                  onUpdated={refreshCase}
-                />
-              </section>
-              <ZipDownloadCard
-                caseRecord={caseRecord}
-                onStoreChange={refreshCase}
-              />
-            </div>
+            <StaffDocumentPack
+              caseRecord={caseRecord}
+              onUpdated={refreshCase}
+            />
           </TabsContent>
           <TabsContent value="cover-letter" className="mt-6">
             <CoverLetterPanel

@@ -67,7 +67,7 @@ export function SlotCard({
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium text-foreground">{title}</p>
         <p className="truncate text-xs text-muted-foreground">
-          {rejected ? "Replacement needed" : slot.documentName}
+          {rejected ? "Fix this document" : slot.documentName}
         </p>
       </div>
       {rejected ? (

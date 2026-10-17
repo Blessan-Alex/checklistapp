@@ -25,6 +25,11 @@ const STATUS_CONFIG: Record<
     className:
       "bg-[color-mix(in_srgb,var(--brand-soft-lavender)_25%,var(--brand-warm-ivory))] text-[var(--brand-deep-purple)]",
   },
+  ready_to_zip: {
+    label: "Ready to zip",
+    className:
+      "bg-[color-mix(in_srgb,var(--brand-soft-lavender)_40%,var(--brand-warm-ivory))] text-[var(--brand-deep-purple)]",
+  },
   zip_ready: {
     label: "Zip ready",
     className: "bg-[var(--brand-rich-violet)] text-[var(--brand-warm-ivory)]",

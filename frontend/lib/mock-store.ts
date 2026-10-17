@@ -9,6 +9,7 @@ import {
   countClientUploadSlots,
   countClientUploadSortGroups,
 } from "@/lib/slot-builder";
+import { allClientUploadsStaffApproved } from "@/lib/staff-review";
 
 export const MOCK_STORE_STORAGE_KEY = "document-portal-demo-v1";
 
@@ -151,6 +152,7 @@ export function setSlotUpload(
           ...slot,
           upload,
           rejection: upload ? undefined : slot.rejection,
+          staffApproval: upload ? undefined : slot.staffApproval,
         }
       : slot,
   );
@@ -250,12 +252,17 @@ export function rejectClientSlotUpload(
       ? {
           ...s,
           upload: undefined,
+          staffApproval: undefined,
           rejection: { message: trimmed, rejectedAt },
         }
       : s,
   );
   let status = current.status;
-  if (status === "submitted" || status === "zip_ready") {
+  if (
+    status === "submitted" ||
+    status === "ready_to_zip" ||
+    status === "zip_ready"
+  ) {
     status = "client_in_progress";
   }
   return updateCase(caseId, {
@@ -277,7 +284,11 @@ export function reopenCaseForClient(
   if (!current) {
     return undefined;
   }
-  if (current.status !== "submitted" && current.status !== "zip_ready") {
+  if (
+    current.status !== "submitted" &&
+    current.status !== "ready_to_zip" &&
+    current.status !== "zip_ready"
+  ) {
     return undefined;
   }
   const reopenedAt = new Date().toISOString();
@@ -288,12 +299,71 @@ export function reopenCaseForClient(
   });
 }
 
+export function approveClientSlotUpload(
+  caseId: string,
+  slotId: string,
+): Case | undefined {
+  const current = getCaseById(caseId);
+  if (!current) {
+    return undefined;
+  }
+  if (
+    current.status !== "submitted" &&
+    current.status !== "ready_to_zip" &&
+    current.status !== "zip_ready"
+  ) {
+    return undefined;
+  }
+  const slot = current.slots.find((s) => s.id === slotId);
+  if (!slot?.clientUpload || !slot.upload) {
+    return undefined;
+  }
+  const approvedAt = new Date().toISOString();
+  const slots = current.slots.map((s) =>
+    s.id === slotId
+      ? {
+          ...s,
+          staffApproval: { approvedAt },
+          rejection: undefined,
+        }
+      : s,
+  );
+  const status =
+    current.status === "ready_to_zip" || current.status === "zip_ready"
+      ? current.status
+      : current.status === "submitted"
+        ? "submitted"
+        : current.status;
+  return updateCase(caseId, { slots, status, updatedAt: approvedAt });
+}
+
+export function completeStaffPackReview(caseId: string): Case | undefined {
+  const current = getCaseById(caseId);
+  if (!current) {
+    return undefined;
+  }
+  if (current.status === "ready_to_zip" || current.status === "zip_ready") {
+    return current;
+  }
+  if (current.status !== "submitted") {
+    return undefined;
+  }
+  if (!allClientUploadsStaffApproved(current)) {
+    return undefined;
+  }
+  const updatedAt = new Date().toISOString();
+  return updateCase(caseId, { status: "ready_to_zip", updatedAt });
+}
+
 export function markCaseZipReady(caseId: string): Case | undefined {
   const current = getCaseById(caseId);
   if (!current) {
     return undefined;
   }
-  if (current.status !== "submitted" && current.status !== "zip_ready") {
+  if (
+    current.status !== "ready_to_zip" &&
+    current.status !== "zip_ready"
+  ) {
     return current;
   }
   return updateCase(caseId, { status: "zip_ready" });
@@ -348,6 +418,7 @@ export function publishCase(caseId: string): Case | undefined {
   }
   if (
     current.status === "submitted" ||
+    current.status === "ready_to_zip" ||
     current.status === "zip_ready" ||
     current.status !== "draft"
   ) {

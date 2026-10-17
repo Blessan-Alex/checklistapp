@@ -19,7 +19,11 @@ export async function POST(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  if (existing.status === "submitted" || existing.status === "zip_ready") {
+  if (
+    existing.status === "submitted" ||
+    existing.status === "ready_to_zip" ||
+    existing.status === "zip_ready"
+  ) {
     return NextResponse.json(
       { error: "Case is submitted. Reopen the case before publishing again." },
       { status: 409 },

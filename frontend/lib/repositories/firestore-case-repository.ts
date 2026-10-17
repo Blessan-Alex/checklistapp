@@ -131,6 +131,7 @@ export class FirestoreCaseRepository implements CaseRepository {
     }
     if (
       current.status === "submitted" ||
+      current.status === "ready_to_zip" ||
       current.status === "zip_ready" ||
       current.status !== "draft"
     ) {

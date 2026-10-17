@@ -111,6 +111,31 @@ export const api = {
     );
   },
 
+  approveSlotUpload(caseId: string, slotId: string) {
+    return apiFetch<{ case: Case }>(
+      `/api/cases/${caseId}/slots/${slotId}/approve`,
+      { method: "POST" },
+    );
+  },
+
+  completeStaffReview(caseId: string) {
+    return apiFetch<{ case: Case }>(`/api/cases/${caseId}/complete-review`, {
+      method: "POST",
+    });
+  },
+
+  staffSlotFileUrl(caseId: string, slotId: string): string {
+    return `/api/cases/${caseId}/slots/${slotId}/file`;
+  },
+
+  staffChecklistFileUrl(caseId: string): string {
+    return `/api/cases/${caseId}/checklist-file`;
+  },
+
+  clientSlotFileUrl(token: string, slotId: string): string {
+    return `/api/client/${token}/slots/${slotId}/file`;
+  },
+
   reopenCase(caseId: string, note: string) {
     return apiFetch<{ case: Case }>(`/api/cases/${caseId}/reopen`, {
       method: "POST",
@@ -133,51 +158,22 @@ export const api = {
 
   uploadClientSlotWithProgress(
     token: string,
+    caseId: string,
     slotId: string,
     file: File,
     onProgress: (percent: number) => void,
+    signal?: AbortSignal,
   ): Promise<{ case: Case }> {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      const form = new FormData();
-      form.append("file", file);
-      const url = `/api/client/${token}/slots/${slotId}/upload`;
-
-      xhr.upload.addEventListener("progress", (event) => {
-        if (event.lengthComputable && event.total > 0) {
-          onProgress(Math.min(100, Math.round((event.loaded / event.total) * 100)));
-        }
-      });
-
-      xhr.addEventListener("load", () => {
-        let body: unknown;
-        try {
-          body = xhr.responseText ? JSON.parse(xhr.responseText) : undefined;
-        } catch {
-          body = xhr.responseText;
-        }
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve(body as { case: Case });
-          return;
-        }
-        const message =
-          typeof body === "object" &&
-          body !== null &&
-          "error" in body &&
-          typeof (body as { error: unknown }).error === "string"
-            ? (body as { error: string }).error
-            : xhr.statusText || "Upload failed";
-        reject(new ApiError(message, xhr.status, body));
-      });
-
-      xhr.addEventListener("error", () => {
-        reject(new ApiError("Upload failed", 0));
-      });
-
-      xhr.open("POST", url);
-      xhr.withCredentials = true;
-      xhr.send(form);
-    });
+    return import("@/lib/client-slot-upload").then(({ uploadClientSlotFile }) =>
+      uploadClientSlotFile({
+        token,
+        caseId,
+        slotId,
+        file,
+        onProgress,
+        signal,
+      }),
+    );
   },
 
   submitClientCase(token: string) {

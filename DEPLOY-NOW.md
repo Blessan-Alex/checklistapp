@@ -60,8 +60,9 @@ git push -u origin main
 | `NEXT_PUBLIC_APP_URL` | `https://YOUR-PROJECT.vercel.app` |
 
 4. **Storage → Blob** → create a **private** store → connect to this project (`BLOB_READ_WRITE_TOKEN` is set automatically)
-5. Remove `FIREBASE_STORAGE_BUCKET` if you added it earlier
-6. **Redeploy** (Deployments → … → Redeploy)
+5. Set `NEXT_PUBLIC_USE_BLOB_UPLOADS` = `true` (enables browser-direct uploads up to **7 MB**; without it, API uploads hit Vercel’s ~4.5 MB body limit)
+6. Remove `FIREBASE_STORAGE_BUCKET` if you added it earlier
+7. **Redeploy** (Deployments → … → Redeploy)
 
 **Pitch-only demo (no Firebase):** set only `NEXT_PUBLIC_USE_MOCK_STORE=true` and skip Firebase vars.
 
@@ -71,7 +72,7 @@ git push -u origin main
 
 - `https://YOUR-PROJECT.vercel.app/staff/login` — staff password you hashed
 - Cases list → Dino → Publish → open client link
-- Upload a file under **4 MB** → Finish → staff zip download
+- Upload a file up to **7 MB** → Finish → staff review → zip download
 
 ---
 

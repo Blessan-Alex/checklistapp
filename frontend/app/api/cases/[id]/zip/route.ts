@@ -21,18 +21,18 @@ export async function GET(
   }
 
   if (
-    caseRecord.status !== "submitted" &&
+    caseRecord.status !== "ready_to_zip" &&
     caseRecord.status !== "zip_ready"
   ) {
     return NextResponse.json(
-      { error: "Zip available after client submits." },
+      { error: "Approve all documents and finish review before downloading the zip." },
       { status: 400 },
     );
   }
 
   const zipBuffer = await buildCaseZipBuffer(caseRecord);
 
-  if (caseRecord.status === "submitted") {
+  if (caseRecord.status === "ready_to_zip") {
     await repo.saveCase({
       ...caseRecord,
       status: "zip_ready",

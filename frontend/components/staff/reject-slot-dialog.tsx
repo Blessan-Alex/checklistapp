@@ -48,7 +48,7 @@ export function RejectSlotDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Request replacement upload</DialogTitle>
+          <DialogTitle>Ask for a new file</DialogTitle>
           <DialogDescription>
             {slot
               ? `The client will see your message on “${slot.targetFileName}” and must upload again.`

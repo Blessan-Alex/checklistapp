@@ -1,4 +1,6 @@
+import { allClientUploadsStaffApproved } from "@/lib/staff-review";
 import { getServerCaseRepository } from "@/lib/server/case-repository-server";
+import { isSlotRejected } from "@/lib/slot-status";
 import type { Case } from "@/lib/types";
 
 export class CaseStaffActionError extends Error {
@@ -43,13 +45,18 @@ export async function rejectClientSlotUpload(
       ? {
           ...s,
           upload: undefined,
+          staffApproval: undefined,
           rejection: { message: trimmed, rejectedAt },
         }
       : s,
   );
 
   let status = caseRecord.status;
-  if (status === "submitted" || status === "zip_ready") {
+  if (
+    status === "submitted" ||
+    status === "ready_to_zip" ||
+    status === "zip_ready"
+  ) {
     status = "client_in_progress";
   }
 
@@ -59,6 +66,98 @@ export async function rejectClientSlotUpload(
     slots,
     updatedAt: rejectedAt,
   });
+}
+
+export async function approveClientSlotUpload(
+  caseId: string,
+  slotId: string,
+): Promise<Case> {
+  const repo = getServerCaseRepository();
+  const caseRecord = await repo.getCaseById(caseId);
+  if (!caseRecord) {
+    throw new CaseStaffActionError("Not found", 404);
+  }
+  if (!caseAwaitingStaffReviewStatus(caseRecord.status)) {
+    throw new CaseStaffActionError(
+      "Review is available after the client submits",
+      400,
+    );
+  }
+
+  const slot = caseRecord.slots.find((s) => s.id === slotId);
+  if (!slot || !slot.clientUpload) {
+    throw new CaseStaffActionError("Invalid slot", 404);
+  }
+  if (!slot.upload) {
+    throw new CaseStaffActionError("No upload on this slot yet", 400);
+  }
+  if (isSlotRejected(slot)) {
+    throw new CaseStaffActionError(
+      "Client must upload a replacement before approval",
+      400,
+    );
+  }
+
+  const approvedAt = new Date().toISOString();
+  const slots = caseRecord.slots.map((s) =>
+    s.id === slotId
+      ? {
+          ...s,
+          staffApproval: { approvedAt },
+          rejection: undefined,
+        }
+      : s,
+  );
+
+  const status =
+    caseRecord.status === "ready_to_zip" || caseRecord.status === "zip_ready"
+      ? caseRecord.status
+      : "submitted";
+
+  return repo.saveCase({
+    ...caseRecord,
+    status,
+    slots,
+    updatedAt: approvedAt,
+  });
+}
+
+export async function completeStaffPackReview(caseId: string): Promise<Case> {
+  const repo = getServerCaseRepository();
+  const caseRecord = await repo.getCaseById(caseId);
+  if (!caseRecord) {
+    throw new CaseStaffActionError("Not found", 404);
+  }
+  if (caseRecord.status === "ready_to_zip" || caseRecord.status === "zip_ready") {
+    return caseRecord;
+  }
+  if (caseRecord.status !== "submitted") {
+    throw new CaseStaffActionError(
+      "Complete review after the client has submitted",
+      400,
+    );
+  }
+  if (!allClientUploadsStaffApproved(caseRecord)) {
+    throw new CaseStaffActionError(
+      "Approve every client document before finishing review",
+      400,
+    );
+  }
+
+  const updatedAt = new Date().toISOString();
+  return repo.saveCase({
+    ...caseRecord,
+    status: "ready_to_zip",
+    updatedAt,
+  });
+}
+
+function caseAwaitingStaffReviewStatus(status: Case["status"]): boolean {
+  return (
+    status === "submitted" ||
+    status === "ready_to_zip" ||
+    status === "zip_ready"
+  );
 }
 
 export async function reopenCaseForClient(
@@ -75,7 +174,11 @@ export async function reopenCaseForClient(
   if (!caseRecord) {
     throw new CaseStaffActionError("Not found", 404);
   }
-  if (caseRecord.status !== "submitted" && caseRecord.status !== "zip_ready") {
+  if (
+    caseRecord.status !== "submitted" &&
+    caseRecord.status !== "ready_to_zip" &&
+    caseRecord.status !== "zip_ready"
+  ) {
     throw new CaseStaffActionError(
       "Only submitted cases can be reopened for the client",
       400,

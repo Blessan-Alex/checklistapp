@@ -52,6 +52,7 @@ const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
   { value: "live", label: "Live" },
   { value: "client_in_progress", label: "In progress" },
   { value: "submitted", label: "Submitted" },
+  { value: "ready_to_zip", label: "Ready to zip" },
   { value: "zip_ready", label: "Zip ready" },
 ];
 

@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { AppShellClient } from "@/components/shells/app-shell-client";
 import { ClientNotFound } from "@/components/client/client-not-found";
 import { ClientPayloadTooLarge } from "@/components/client/client-payload-too-large";
+import { ClientUploadError } from "@/components/client/client-upload-error";
 import { ClientUnauthorized } from "@/components/client/client-unauthorized";
 import { ReplaceFileDialog } from "@/components/client/replace-file-dialog";
 import { DontList } from "@/components/shared/dont-list";
@@ -19,7 +19,13 @@ import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/config/routes";
 import { clientUploadProgress, isClientPortalLocked } from "@/lib/client-portal";
 import { isSlotRejected } from "@/lib/slot-status";
-import { api, ApiError, queryKeys } from "@/lib/api-client";
+import { api, queryKeys } from "@/lib/api-client";
+import {
+  ClientSlotUploadError,
+  uploadClientSlotFile,
+} from "@/lib/client-slot-upload";
+import { validateClientUploadSize } from "@/lib/client-upload-validation";
+import { mimeTypeFromFilename } from "@/lib/mime-from-filename";
 import { useMockDataSource } from "@/lib/data-source";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -106,10 +112,31 @@ export function ClientSlotDetail({
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [payloadTooLarge, setPayloadTooLarge] = useState(false);
+  const [uploadError, setUploadError] = useState<{
+    kind: ClientSlotUploadError["kind"];
+    message: string;
+  } | null>(null);
+  const [browserOffline, setBrowserOffline] = useState(
+    typeof navigator !== "undefined" ? !navigator.onLine : false,
+  );
+  const lastFileRef = useRef<File | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     setPayloadTooLarge(false);
+    setUploadError(null);
   }, [token, slotId]);
+
+  useEffect(() => {
+    const goOffline = () => setBrowserOffline(true);
+    const goOnline = () => setBrowserOffline(false);
+    window.addEventListener("offline", goOffline);
+    window.addEventListener("online", goOnline);
+    return () => {
+      window.removeEventListener("offline", goOffline);
+      window.removeEventListener("online", goOnline);
+    };
+  }, []);
 
   const slot = caseRecord?.slots.find((s) => s.id === slotId);
   const locked = caseRecord ? isClientPortalLocked(caseRecord) : false;
@@ -159,13 +186,25 @@ export function ClientSlotDetail({
   }
 
   function startApiUpload(file: File) {
-    if (!slot) {
+    if (!slot || !caseRecord) {
       return;
     }
+    lastFileRef.current = file;
+    setUploadError(null);
+    setPayloadTooLarge(false);
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setUploading(true);
     setUploadProgress(0);
-    void api
-      .uploadClientSlotWithProgress(token, slot.id, file, setUploadProgress)
+    void uploadClientSlotFile({
+      token,
+      caseId: caseRecord.id,
+      slotId: slot.id,
+      file,
+      onProgress: setUploadProgress,
+      signal: controller.signal,
+    })
       .then((data) => {
         queryClient.setQueryData(queryKeys.clientCase(token), data.case);
         setSavedFlash(true);
@@ -173,18 +212,38 @@ export function ClientSlotDetail({
         window.setTimeout(() => setSavedFlash(false), 2500);
       })
       .catch((error: unknown) => {
-        if (error instanceof ApiError && error.status === 413) {
-          setPayloadTooLarge(true);
+        if (error instanceof ClientSlotUploadError) {
+          if (error.kind === "cancelled") {
+            return;
+          }
+          if (error.kind === "too_large") {
+            setPayloadTooLarge(true);
+            return;
+          }
+          setUploadError({ kind: error.kind, message: error.message });
           return;
         }
-        toast.error(
-          error instanceof ApiError ? error.message : "Upload failed. Try again.",
-        );
+        setUploadError({
+          kind: "unknown",
+          message: "Upload failed. Please try again.",
+        });
       })
       .finally(() => {
         setUploading(false);
         setUploadProgress(null);
+        abortRef.current = null;
       });
+  }
+
+  function cancelUpload() {
+    abortRef.current?.abort();
+  }
+
+  function retryLastUpload() {
+    const file = lastFileRef.current;
+    if (file && !locked) {
+      startApiUpload(file);
+    }
   }
 
   function handleFileSelect(file: File) {
@@ -192,6 +251,20 @@ export function ClientSlotDetail({
       return;
     }
     setPayloadTooLarge(false);
+    setUploadError(null);
+    if (browserOffline) {
+      setUploadError({
+        kind: "offline",
+        message:
+          "You appear to be offline. Connect to the internet, then try again.",
+      });
+      return;
+    }
+    const sizeError = validateClientUploadSize(file);
+    if (sizeError) {
+      setPayloadTooLarge(true);
+      return;
+    }
 
     if (slot.upload) {
       setPendingFile(file);
@@ -257,7 +330,7 @@ export function ClientSlotDetail({
           <Alert
             className="border-[var(--brand-golden-ochre)]/60 bg-[color-mix(in_srgb,var(--brand-golden-ochre)_14%,var(--brand-warm-ivory))]"
           >
-            <AlertTitle>Please upload a replacement</AlertTitle>
+            <AlertTitle>Changes needed</AlertTitle>
             <AlertDescription>{slot.rejection.message}</AlertDescription>
           </Alert>
         ) : null}
@@ -288,20 +361,78 @@ export function ClientSlotDetail({
           />
         ) : null}
 
+        {locked && slot.upload && !mockData ? (
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-foreground">Your upload</p>
+            {mimeTypeFromFilename(slot.upload.name) === "application/pdf" ? (
+              <iframe
+                title={slot.targetFileName}
+                src={api.clientSlotFileUrl(token, slot.id)}
+                className="min-h-[min(20rem,45vh)] w-full rounded-lg border border-border"
+              />
+            ) : mimeTypeFromFilename(slot.upload.name).startsWith("image/") ? (
+              <div className="rounded-lg border border-border p-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={api.clientSlotFileUrl(token, slot.id)}
+                  alt={slot.targetFileName}
+                  className="max-h-[min(20rem,45vh)] w-full object-contain"
+                />
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Saved as {slot.upload.name}
+              </p>
+            )}
+          </div>
+        ) : null}
+
         {locked ? (
           <p className="text-sm text-muted-foreground">
             Uploads are closed — you have already submitted your documents.
           </p>
         ) : (
           <>
+            {isSlotRejected(slot) ? (
+              <p className="text-sm font-semibold text-primary">
+                Upload replacement
+              </p>
+            ) : null}
+            {browserOffline ? (
+              <Alert variant="destructive">
+                <AlertTitle>Offline</AlertTitle>
+                <AlertDescription>
+                  Uploads need an internet connection. Reconnect, then use Retry
+                  upload or choose your file again.
+                </AlertDescription>
+              </Alert>
+            ) : null}
+            {uploadError && !payloadTooLarge ? (
+              <ClientUploadError
+                kind={uploadError.kind}
+                message={uploadError.message}
+                onRetry={retryLastUpload}
+                onDismiss={() => setUploadError(null)}
+              />
+            ) : null}
             {payloadTooLarge ? (
               <ClientPayloadTooLarge
                 onTryAgain={() => setPayloadTooLarge(false)}
               />
             ) : null}
+            {uploading ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-11 w-full"
+                onClick={cancelUpload}
+              >
+                Cancel upload
+              </Button>
+            ) : null}
             <UploadDropzone
               onFileSelect={handleFileSelect}
-              disabled={uploading}
+              disabled={uploading || browserOffline}
               uploading={uploading}
               uploadProgress={uploadProgress}
             />

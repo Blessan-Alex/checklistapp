@@ -59,7 +59,7 @@ If you set `NEXT_PUBLIC_USE_MOCK_STORE=false`:
 |-----------|----------------------------|
 | `lib/db/database.ts` + `better-sqlite3` | DB file on ephemeral disk; not shared across instances; wiped on cold start |
 | `STORAGE_PATH` / `lib/server/case-storage.ts` | Same — no durable disk |
-| `pdf-parse` / large uploads | Hobby **4.5 MB** request body limit on Serverless Functions (your client max is 7 MB — already above limit for API uploads) |
+| `pdf-parse` / large uploads | Hobby **4.5 MB** request body limit on Serverless Functions — use **`NEXT_PUBLIC_USE_BLOB_UPLOADS=true`** so clients upload directly to Vercel Blob (up to **7 MB**) |
 | Native `better-sqlite3` | Adds build complexity; still doesn’t fix persistence |
 
 **Do not enable API mode on Vercel until storage is migrated.**

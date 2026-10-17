@@ -29,6 +29,7 @@ import {
 } from "@/lib/zip-manifest";
 import { OneDriveExportButton } from "@/components/staff/onedrive-export-button";
 import { markCaseZipReady } from "@/lib/mock-store";
+import { canStaffDownloadZip } from "@/lib/staff-review";
 import type { Case } from "@/lib/types";
 import { toast } from "sonner";
 
@@ -48,9 +49,7 @@ export function ZipDownloadCard({
   );
   const root = getArchiveRootName(caseRecord);
 
-  const canDownload =
-    caseRecord.status === "submitted" ||
-    caseRecord.status === "zip_ready";
+  const canDownload = canStaffDownloadZip(caseRecord);
 
   async function handleDownload() {
     if (mockData) {
@@ -92,10 +91,10 @@ export function ZipDownloadCard({
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Archive className="size-4 text-primary" aria-hidden />
-            Document pack
+            Pack ready for Home Office
           </CardTitle>
           <CardDescription>
-            Renamed files ready for the Home Office pack.
+            Renamed files in the final zip — download when review is complete.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
@@ -110,8 +109,8 @@ export function ZipDownloadCard({
           <OneDriveExportButton caseRecord={caseRecord} />
           {!canDownload ? (
             <p className="mt-2 text-xs text-muted-foreground">
-              Available after the client submits
-              {mockData ? ", or use Simulate client completed." : "."}
+              Approve every client document and finish review to unlock the zip.
+              {mockData ? " Use Simulate client completed, then approve slots in Review." : ""}
             </p>
           ) : null}
         </CardContent>

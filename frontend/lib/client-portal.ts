@@ -30,7 +30,9 @@ export function subscribeMockStore(onStoreChange: () => void): () => void {
 
 export function isClientPortalLocked(caseRecord: Case): boolean {
   return (
-    caseRecord.status === "submitted" || caseRecord.status === "zip_ready"
+    caseRecord.status === "submitted" ||
+    caseRecord.status === "ready_to_zip" ||
+    caseRecord.status === "zip_ready"
   );
 }
 
